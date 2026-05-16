@@ -1,4 +1,270 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+
+
+// ─── CLIENTES: cinta transportadora industrial ───────────────────────────────
+const CLIENTS = [
+  { name: "YPF",              color: "#4a90d9", letter: "Y",  desc: "Proyecto de ingeniería estructural para plantas de extracción en la cuenca neuquina." },
+  { name: "IMPSA",            color: "#c8a96e", letter: "I",  desc: "Cálculo y supervisión de obras civiles para parques de generación eólica." },
+  { name: "Techint",          color: "#7ab0d4", letter: "T",  desc: "Estructuras metálicas y fundaciones para complejos industriales en Bahía Blanca." },
+  { name: "IECSA",            color: "#b87a5a", letter: "E",  desc: "Dirección técnica en obras de infraestructura vial y puentes de hormigón." },
+  { name: "Roggio",           color: "#9a9a7a", letter: "R",  desc: "Auditoría estructural y certificación de obras en el área metropolitana." },
+  { name: "Electroingenieria",color: "#8a7ac8", letter: "EL", desc: "Ingeniería de detalle para subestaciones eléctricas de alta tensión." },
+  { name: "Loma Negra",       color: "#7ab87a", letter: "LN", desc: "Estudio de suelos y diseño de fundaciones para plantas cementeras." },
+  { name: "Sacde",            color: "#c0c0c0", letter: "S",  desc: "Proyecto ejecutivo de estructuras para obras hidráulicas en el NOA." },
+  { name: "Ghella",           color: "#d4a0a0", letter: "G",  desc: "Soporte técnico en tunelería y obras subterráneas en Buenos Aires." },
+  { name: "IATEC",            color: "#a0c4d4", letter: "IA", desc: "Consultoría en instalaciones industriales y montaje electromecánico." },
+];
+
+const VW = 1000; const VH = 320;
+const GR  = 52; const BT = 12;
+const TX  = GR; const TXR = VW - GR;
+const VCY = VH * 0.72;
+const OT  = VCY - GR; const IT = VCY - GR + BT;
+const OB  = VCY + GR; const IB = VCY + GR - BT;
+const STRAIGHT = TXR - TX;
+const CW = 130; const CH = 110; const CGAP = 22;
+const CARD_PITCH = CW + CGAP;
+const N_CARDS = CLIENTS.length;
+const LOOP_W = N_CARDS * CARD_PITCH;
+const TW = 12; const TG = 7; const TH = 10;
+const TPITCH = TW + TG;
+const N_TEETH = Math.ceil(STRAIGHT / TPITCH) + 2;
+const VIGA_X_L = TX + GR * 0.3;
+const VIGA_X_R = TXR - GR * 0.3 - 18;
+const VIGA_W = 18;
+const REMACHES = [20, 60, 110, 160, 210, 260];
+
+function Gear({ cx, cy, paused }) {
+  const teeth = 16; const r = GR - BT/2; const toothH = 11;
+  const pts = [];
+  for (let i = 0; i < teeth; i++) {
+    const a0 = (i/teeth)*2*Math.PI - Math.PI/2;
+    const a1 = a0 + 0.38/teeth*2*Math.PI;
+    const a2 = a0 + 0.62/teeth*2*Math.PI;
+    const a3 = a0 + 1.0 /teeth*2*Math.PI;
+    const p = (a,rad) => `${(cx+Math.cos(a)*rad).toFixed(2)},${(cy+Math.sin(a)*rad).toFixed(2)}`;
+    pts.push(`${p(a0,r)} ${p(a1,r)} ${p(a1,r+toothH)} ${p(a2,r+toothH)} ${p(a2,r)} ${p(a3,r)}`);
+  }
+  const d = "M" + pts.join(" ") + "Z";
+  return (
+    <g style={{ transformOrigin:`${cx}px ${cy}px`, animation:`gearSpin 4s linear infinite`, animationPlayState: paused ? "paused" : "running" }}>
+      <path d={d} fill="#252525" stroke="#4a4a4a" strokeWidth="1" />
+      <circle cx={cx} cy={cy} r={r*0.5}  fill="none" stroke="#4a4a4a" strokeWidth="3" />
+      <circle cx={cx} cy={cy} r={r*0.18} fill="#4a4a4a" />
+    </g>
+  );
+}
+
+function ClientsBelt({ accent, steel, text }) {
+  const bg = "#07060e";
+  const [selected, setSelected] = React.useState(null);
+  const [offset,   setOffset]   = React.useState(0);
+  const pausedRef   = React.useRef(false);
+  const rafRef      = React.useRef(null);
+  const speed       = 0.5; // px per frame
+
+  // Auto-scroll loop
+  React.useEffect(() => {
+    const tick = () => {
+      if (!pausedRef.current) {
+        setOffset(o => {
+          const next = o - speed;
+          return next < -LOOP_W ? next + LOOP_W : next;
+        });
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, []);
+
+  // Pause only when hovering a card
+  const handleCardEnter = () => { pausedRef.current = true; };
+  const handleCardLeave = () => { if (!selected) pausedRef.current = false; };
+
+  // Resume belt when modal closes
+  const closeModal = () => {
+    setSelected(null);
+    pausedRef.current = false;
+  };
+
+  const cards = [...CLIENTS, ...CLIENTS, ...CLIENTS];
+  const paused = pausedRef.current || !!selected;
+
+  return (
+    <div style={{ width:"100%", display:"flex", flexDirection:"column", justifyContent:"flex-start", height:"100%", paddingTop:"60px", gap:"60px" }}>
+
+      {/* Header */}
+      <div>
+        <div style={{ display:"flex", alignItems:"center", gap:"10px", marginBottom:"0.8rem" }}>
+          <div style={{ width:"28px", height:"1.5px", background:accent }}/>
+          <span style={{ fontFamily:"'Courier New', monospace", fontSize:"11px", letterSpacing:"0.16em", color:accent, textTransform:"uppercase" }}>Quienes confian en nosotros</span>
+        </div>
+        <h1 style={{ fontSize:"clamp(38px, 5vw, 64px)", fontWeight:"normal", color:text, margin:0, lineHeight:0.95, letterSpacing:"-0.03em" }}>Clientes</h1>
+      </div>
+
+      {/* Belt */}
+      <div style={{ width:"100%", position:"relative" }}>
+        <svg viewBox={`0 0 ${VW} ${VH}`} style={{ width:"100%", display:"block" }} xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <clipPath id="cardClip">
+              <rect x={VIGA_X_L + VIGA_W} y={0} width={VIGA_X_R - VIGA_X_L - VIGA_W} height={VH} />
+            </clipPath>
+            <clipPath id="toothClipT">
+              <rect x={TX} y={OT - TH - 2} width={STRAIGHT} height={TH + 4} />
+            </clipPath>
+            <clipPath id="toothClipB">
+              <rect x={TX} y={OB - 2} width={STRAIGHT} height={TH + 4} />
+            </clipPath>
+            <linearGradient id="fadeL" x1="0" x2="1" y1="0" y2="0">
+              <stop offset="0%"   stopColor={bg} stopOpacity="1" />
+              <stop offset="100%" stopColor={bg} stopOpacity="0" />
+            </linearGradient>
+            <linearGradient id="fadeR" x1="0" x2="1" y1="0" y2="0">
+              <stop offset="0%"   stopColor={bg} stopOpacity="0" />
+              <stop offset="100%" stopColor={bg} stopOpacity="1" />
+            </linearGradient>
+            <linearGradient id="vigaGrad" x1="0" x2="1" y1="0" y2="0">
+              <stop offset="0%"   stopColor="#222" />
+              <stop offset="45%"  stopColor="#4a4a4a" />
+              <stop offset="100%" stopColor="#1e1e1e" />
+            </linearGradient>
+          </defs>
+
+          {/* Cajas (JS transform, no CSS animation) */}
+          <g clipPath="url(#cardClip)">
+            <g transform={`translate(${offset % LOOP_W}, 0)`}>
+              {cards.map((c, i) => {
+                const x = TX + 10 + i * CARD_PITCH;
+                const y = OT - CH - 6;
+                return (
+                  <g key={i}
+                    onClick={() => setSelected(c)}
+                    onMouseEnter={handleCardEnter}
+                    onMouseLeave={handleCardLeave}
+                    style={{ cursor:"pointer" }}
+                  >
+                    <rect x={x} y={y} width={CW} height={CH} rx="2"
+                      fill={c.color+"18"} stroke={c.color+"66"} strokeWidth="1" />
+                    <circle cx={x+CW/2} cy={y+CH*0.42} r="26"
+                      fill={c.color+"28"} stroke={c.color+"88"} strokeWidth="1.5" />
+                    <text x={x+CW/2} y={y+CH*0.42+6} textAnchor="middle"
+                      fontFamily="'Courier New', monospace" fontSize="14" fontWeight="bold" fill={c.color}>{c.letter}</text>
+                    <text x={x+CW/2} y={y+CH*0.82} textAnchor="middle"
+                      fontFamily="'Courier New', monospace" fontSize="9" letterSpacing="1"
+                      fill={c.color} fillOpacity="0.7">{c.name.toUpperCase()}</text>
+                  </g>
+                );
+              })}
+            </g>
+          </g>
+
+          {/* Correa */}
+          <rect x={TX} y={OT} width={STRAIGHT} height={BT} fill="#2a2a2a" />
+          <rect x={TX} y={OB-BT} width={STRAIGHT} height={BT} fill="#2a2a2a" />
+          <path d={`M${TX},${OT} A${GR},${GR} 0 0,0 ${TX},${OB}`} fill="none" stroke="#2a2a2a" strokeWidth={BT} />
+          <path d={`M${TXR},${OT} A${GR},${GR} 0 0,1 ${TXR},${OB}`} fill="none" stroke="#2a2a2a" strokeWidth={BT} />
+          <path d={`M${TX},${IT} L${TXR},${IT} A${GR-BT},${GR-BT} 0 0,1 ${TXR},${IB} L${TX},${IB} A${GR-BT},${GR-BT} 0 0,1 ${TX},${IT} Z`} fill="transparent" />
+          <path d={`M${TX},${OT} L${TXR},${OT} A${GR},${GR} 0 0,1 ${TXR},${OB} L${TX},${OB} A${GR},${GR} 0 0,1 ${TX},${OT} Z`} fill="none" stroke="#444" strokeWidth="1.5" />
+
+          {/* Dientes superiores */}
+          <g clipPath="url(#toothClipT)" style={{ animation:`teethMove ${TPITCH/55}s linear infinite`, animationPlayState: paused ? "paused" : "running" }}>
+            {Array.from({length:N_TEETH},(_,i)=>(
+              <rect key={i} x={TX+i*TPITCH-TPITCH} y={OT-TH} width={TW} height={TH} rx="1.5" fill="#1e1e1e" stroke="#3e3e3e" strokeWidth="0.8" />
+            ))}
+          </g>
+          {/* Dientes inferiores */}
+          <g clipPath="url(#toothClipB)" style={{ animation:`teethMovR ${TPITCH/55}s linear infinite`, animationPlayState: paused ? "paused" : "running" }}>
+            {Array.from({length:N_TEETH},(_,i)=>(
+              <rect key={i} x={TX+i*TPITCH-TPITCH} y={OB} width={TW} height={TH} rx="1.5" fill="#1e1e1e" stroke="#3e3e3e" strokeWidth="0.8" />
+            ))}
+          </g>
+
+          {/* Engranajes */}
+          <Gear cx={TX}  cy={VCY} paused={paused} />
+          <Gear cx={TXR} cy={VCY} paused={paused} />
+
+          {/* Fades */}
+          <rect x={0} y={0} width={VIGA_X_L+VIGA_W+20} height={VH} fill="url(#fadeL)" />
+          <rect x={VIGA_X_R-20} y={0} width={VW-VIGA_X_R+20} height={VH} fill="url(#fadeR)" />
+
+          {/* Vigas */}
+          <rect x={VIGA_X_L} y={0} width={VIGA_W} height={VH} fill="url(#vigaGrad)" stroke="#555" strokeWidth="0.8" />
+          {REMACHES.map(ry => (
+            <g key={ry}>
+              <circle cx={VIGA_X_L+VIGA_W/2} cy={ry} r="4" fill="#1a1a1a" stroke="#555" strokeWidth="0.8" />
+              <circle cx={VIGA_X_L+VIGA_W/2} cy={ry} r="1.5" fill="#666" />
+            </g>
+          ))}
+          <rect x={VIGA_X_R} y={0} width={VIGA_W} height={VH} fill="url(#vigaGrad)" stroke="#555" strokeWidth="0.8" />
+          {REMACHES.map(ry => (
+            <g key={ry}>
+              <circle cx={VIGA_X_R+VIGA_W/2} cy={ry} r="4" fill="#1a1a1a" stroke="#555" strokeWidth="0.8" />
+              <circle cx={VIGA_X_R+VIGA_W/2} cy={ry} r="1.5" fill="#666" />
+            </g>
+          ))}
+        </svg>
+      </div>
+
+      {/* Modal */}
+      {selected && (
+        <div onClick={closeModal} style={{
+          position:"fixed", inset:0, zIndex:200,
+          background:"rgba(0,0,0,0.7)",
+          display:"flex", alignItems:"center", justifyContent:"center",
+          cursor:"pointer",
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background:"#0d0c14", border:`1px solid ${selected.color}66`,
+            padding:"36px 40px", maxWidth:"420px", width:"90%",
+            position:"relative", cursor:"default",
+          }}>
+            {[[0,0],[1,0],[0,1],[1,1]].map(([r,b],i) => (
+              <div key={i} style={{
+                position:"absolute",
+                top:b===0?0:"auto", bottom:b===1?0:"auto",
+                left:r===0?0:"auto", right:r===1?0:"auto",
+                width:"16px", height:"16px",
+                borderTop:    b===0?`2px solid ${selected.color}`:"none",
+                borderBottom: b===1?`2px solid ${selected.color}`:"none",
+                borderLeft:   r===0?`2px solid ${selected.color}`:"none",
+                borderRight:  r===1?`2px solid ${selected.color}`:"none",
+              }}/>
+            ))}
+            <div style={{
+              width:"60px", height:"60px", borderRadius:"50%",
+              background:`${selected.color}22`, border:`2px solid ${selected.color}88`,
+              display:"flex", alignItems:"center", justifyContent:"center",
+              fontFamily:"'Courier New', monospace", fontSize:"18px", fontWeight:"bold",
+              color:selected.color, marginBottom:"20px",
+            }}>{selected.letter}</div>
+            <div style={{ fontFamily:"'Courier New', monospace", fontSize:"10px", letterSpacing:"0.2em", color:selected.color, marginBottom:"6px", textTransform:"uppercase" }}>Cliente</div>
+            <h2 style={{ fontFamily:"Georgia, serif", fontSize:"28px", fontWeight:"normal", color:"#f5f5f5", margin:"0 0 16px", letterSpacing:"-0.02em" }}>{selected.name}</h2>
+            <div style={{ width:"36px", height:"1.5px", background:selected.color, marginBottom:"16px" }}/>
+            <p style={{ fontFamily:"'Courier New', monospace", fontSize:"12px", color:"rgba(255,255,255,0.65)", lineHeight:"1.8", margin:"0 0 24px", letterSpacing:"0.02em" }}>{selected.desc}</p>
+            <button onClick={closeModal} style={{
+              background:"transparent", border:`1px solid ${selected.color}66`,
+              color:selected.color, padding:"8px 20px",
+              fontFamily:"'Courier New', monospace", fontSize:"10px",
+              letterSpacing:"0.15em", cursor:"pointer", textTransform:"uppercase",
+            }}>Cerrar</button>
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <div style={{ fontFamily:"'Courier New', monospace", fontSize:"11px", color:steel, letterSpacing:"0.1em", opacity:0.5, display:"flex", gap:"1.5rem" }}>
+        <span>NIV. 03</span><span>+10.50 m</span><span>COTA ±0.00</span>
+      </div>
+
+      <style>{`
+        @keyframes teethMove  { from{transform:translateX(0)} to{transform:translateX(-${TPITCH}px)} }
+        @keyframes teethMovR  { from{transform:translateX(0)} to{transform:translateX(${TPITCH}px)}  }
+        @keyframes gearSpin   { from{transform:rotate(0deg)}  to{transform:rotate(-360deg)} }
+      `}</style>
+    </div>
+  );
+}
 
 // Fotos de ingeniería via Picsum (funcionan sin restricciones CORS)
 const ENGINEERING_PHOTOS = [
@@ -11,22 +277,23 @@ const ENGINEERING_PHOTOS = [
 ];
 
 function PhotoSlider({ accent, steel }) {
-  const [open, setOpen] = useState(null); // índice de la foto abierta, null = cerrado
+  const [open, setOpen] = useState(null);
 
   return (
-    <div style={{ width: "100%", maxWidth: "760px", display: "flex", flexDirection: "column", height: "calc(100vh - 160px)", gap: "16px" }}>
+    <div style={{ width: "100%", maxWidth: "820px", display: "flex", flexDirection: "column", gap: "20px" }}>
 
       {/* Header */}
       <div style={{ display:"flex", alignItems:"center", gap:"10px", flexShrink:0 }}>
         <div style={{ width:"28px", height:"1.5px", background:accent }}/>
-        <span style={{ fontFamily:"'Courier New', monospace", fontSize:"10px", letterSpacing:"0.16em", color:accent, textTransform:"uppercase" }}>La obra en marcha</span>
+        <span style={{ fontFamily:"'Courier New', monospace", fontSize:"12px", letterSpacing:"0.16em", color:accent, textTransform:"uppercase" }}>La obra en marcha</span>
       </div>
 
-      {/* Grid de thumbnails */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:"8px", flex:1, minHeight:0 }}>
+      {/* Grid de thumbnails — cuadrados */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:"8px" }}>
         {ENGINEERING_PHOTOS.map((p, i) => (
           <div key={i} onClick={() => setOpen(i)} style={{
             position:"relative", cursor:"pointer", overflow:"hidden",
+            aspectRatio:"1",
             border: `1px solid ${steel}33`,
             transition:"border-color 0.3s",
           }}
@@ -45,8 +312,8 @@ function PhotoSlider({ accent, steel }) {
               background:"linear-gradient(to top, #000000bb 0%, transparent 60%)",
             }}/>
             <div style={{
-              position:"absolute", bottom:"8px", left:"10px",
-              fontFamily:"'Courier New', monospace", fontSize:"9px",
+              position:"absolute", bottom:"10px", left:"12px",
+              fontFamily:"'Courier New', monospace", fontSize:"12px",
               letterSpacing:"0.14em", color:"#ffffffaa",
             }}>{p.label}</div>
           </div>
@@ -54,7 +321,7 @@ function PhotoSlider({ accent, steel }) {
       </div>
 
       {/* Footer */}
-      <div style={{ fontFamily:"'Courier New', monospace", fontSize:"10px", color:steel, letterSpacing:"0.1em", opacity:0.5, display:"flex", gap:"1rem", flexShrink:0 }}>
+      <div style={{ fontFamily:"'Courier New', monospace", fontSize:"12px", color:steel, letterSpacing:"0.1em", opacity:0.5, display:"flex", gap:"1rem", flexShrink:0 }}>
         <span>NIV. 02</span><span>+7.00 m</span><span>COTA ±0.00</span>
       </div>
 
@@ -95,10 +362,11 @@ function PhotoSlider({ accent, steel }) {
             {/* Cerrar */}
             <button onClick={() => setOpen(null)} style={{
               position:"absolute", top:"10px", right:"10px",
-              background:"transparent", border:`1px solid ${steel}66`,
-              color:"#ffffff99", width:"26px", height:"26px",
-              cursor:"pointer", fontFamily:"monospace", fontSize:"14px",
+              background:"rgba(0,0,0,0.75)", border:"1px solid rgba(255,255,255,0.4)",
+              color:"#ffffff", width:"32px", height:"32px",
+              cursor:"pointer", fontFamily:"monospace", fontSize:"18px",
               display:"flex", alignItems:"center", justifyContent:"center",
+              backdropFilter:"blur(4px)",
             }}>×</button>
             {/* Prev / Next */}
             {open > 0 && (
@@ -134,19 +402,17 @@ const floors = [
   { number: 6, label: "PISO 6",  title: "Fundaciones",  subtitle: "Lo que sostiene todo",     description: "El suelo habla si sabés escucharlo. Estudiamos cada estrato para que lo que construimos dure generaciones.", accent: "#b87a5a", bg: "#100806", text: "#f5e0d8", steel: "#6a3a2a" },
   { number: 5, label: "PISO 5",  title: "Hidráulica",   subtitle: "El flujo como ingeniería", description: "El agua sigue leyes exactas. Diseñamos redes, drenajes y sistemas que respetan cada milímetro de presión.", accent: "#5a9ab0", bg: "#05090e", text: "#d8eef5", steel: "#2a5a6a" },
   { number: 4, label: "PISO 4",  title: "Materiales",   subtitle: "Elegir con precisión",     description: "Acero, hormigón, compuestos. Cada material tiene un propósito; equivocarse en la elección no es una opción.", accent: "#9a9a7a", bg: "#090906", text: "#f0f0e0", steel: "#5a5a3a" },
-  { number: 3, label: "PISO 3",  title: "Proyecto",     subtitle: "Del plano a la realidad",  description: "La documentación técnica es el lenguaje entre la idea y la obra. Cada plano es una instrucción sin ambigüedad.", accent: "#8a7ac8", bg: "#07060e", text: "#e4d8f5", steel: "#3a3a6a" },
+  { number: 3, label: "PISO 3",  title: "Clientes",     subtitle: "Quienes confían en nosotros",  description: "Empresas que eligen rigor, precisión y experiencia para sus proyectos más exigentes.", accent: "#8a7ac8", bg: "#07060e", text: "#e4d8f5", steel: "#3a3a6a" },
   { number: 2, label: "PISO 2",  title: "Construcción", subtitle: "La obra en marcha",        description: "Supervisamos cada etapa. La ingeniería no termina en el escritorio; vive y respira en el sitio de obra.", accent: "#7ab87a", bg: "#050e05", text: "#d8f5d8", steel: "#2a5a2a" },
   { number: 1, label: "P. BAJA", title: "Contacto",     subtitle: "Tu proyecto empieza aquí", description: "Estudio de ingeniería con más de 20 años de experiencia. Contanos tu desafío y lo convertimos en estructura.", accent: "#c0c0c0", bg: "#080808", text: "#f5f5f5", steel: "#5a5a5a" },
 ];
 
-// ─── COLORES FIJOS DEL ASCENSOR (acero, no cambian con el piso) ───────────────
-const CS  = "#7a8a8a";   // acero medio
-const CD  = "#4a5858";   // ala / flange oscuro
-const CR  = "#9aaaaa";   // roblón
-const CA  = "#b0c4c4";   // highlight frío
+const CS  = "#7a8a8a";
+const CD  = "#4a5858";
+const CR  = "#9aaaaa";
+const CA  = "#b0c4c4";
 
-// ─── SHAFT: esquema del ascensor (panel izquierdo) ────────────────────────────
-const VB_W = 380;       // expandido: 200 shaft + 180 nombres
+const VB_W = 380;
 const VB_H = 700;
 const SHAFT_TOP = 35;
 const SHAFT_BOT = 665;
@@ -154,14 +420,15 @@ const SHAFT_H   = SHAFT_BOT - SHAFT_TOP;
 const FLOOR_H_S = SHAFT_H / (TOTAL - 1);
 const CAB_W = 74;
 const CAB_H = 50;
-const CAB_X = 63;       // fijo: era (200-74)/2
-const SHAFT_CX = 100;   // centro del shaft (era VB_W/2 cuando VB_W=200)
-const CW_X = 160;       // contrapeso fijo (era VB_W-18=182)
+const CAB_X = 63;
+const SHAFT_CX = 100;
+const CW_X = 160;
 
 function shaftY(idx) { return SHAFT_TOP + idx * FLOOR_H_S; }
 
-function ElevatorShaft({ current, arrived, go, accent }) {
-  const cabinY = shaftY(current) - CAB_H / 2;
+function ElevatorShaft({ current, introCurrent, doorsVisible, arrived, go, accent }) {
+  const shaftIdx = doorsVisible ? introCurrent : current;
+  const cabinY = shaftY(shaftIdx) - CAB_H / 2;
   const cwY    = SHAFT_H - (cabinY - SHAFT_TOP) + SHAFT_TOP;
 
   return (
@@ -180,21 +447,17 @@ function ElevatorShaft({ current, arrived, go, accent }) {
         </filter>
       </defs>
 
-      {/* Shaft wall hints */}
       <rect x={CAB_X - 24} y={SHAFT_TOP - 12} width="2" height={SHAFT_H + 24} fill={CS} fillOpacity="0.1" />
       <rect x={CAB_X + CAB_W + 22} y={SHAFT_TOP - 12} width="2" height={SHAFT_H + 24} fill={CS} fillOpacity="0.1" />
 
-      {/* Pulley at top */}
       <circle cx={SHAFT_CX} cy={SHAFT_TOP - 16} r="9" fill="none" stroke={CR} strokeWidth="1.5" strokeOpacity="0.55" />
       <circle cx={SHAFT_CX} cy={SHAFT_TOP - 16} r="3.5" fill={CR} fillOpacity="0.45" />
 
-      {/* Guide rails */}
       <rect x={CAB_X - 11} y={SHAFT_TOP - 12} width="5" height={SHAFT_H + 24} fill={CS} fillOpacity="0.5" />
       <rect x={CAB_X - 14} y={SHAFT_TOP - 12} width="3" height={SHAFT_H + 24} fill={CD} fillOpacity="0.4" />
       <rect x={CAB_X + CAB_W + 6} y={SHAFT_TOP - 12} width="5" height={SHAFT_H + 24} fill={CS} fillOpacity="0.5" />
       <rect x={CAB_X + CAB_W + 11} y={SHAFT_TOP - 12} width="3" height={SHAFT_H + 24} fill={CD} fillOpacity="0.4" />
 
-      {/* Cables */}
       <rect x={SHAFT_CX - 11} y={SHAFT_TOP - 7} width="1.4" height={cabinY - (SHAFT_TOP - 7)}
         fill={CS} fillOpacity="0.6"
         style={{ transition: `height ${ANIM_MS}ms cubic-bezier(0.33,1,0.68,1)` }} />
@@ -202,7 +465,6 @@ function ElevatorShaft({ current, arrived, go, accent }) {
         fill={CS} fillOpacity="0.6"
         style={{ transition: `height ${ANIM_MS}ms cubic-bezier(0.33,1,0.68,1)` }} />
 
-      {/* Counterweight */}
       <g style={{ transform: `translateY(${cwY - SHAFT_TOP}px)`, transition: `transform ${ANIM_MS}ms cubic-bezier(0.33,1,0.68,1)` }}>
         <line x1={CW_X} y1={SHAFT_TOP} x2={CW_X} y2={SHAFT_TOP - 10} stroke={CS} strokeWidth="1.2" strokeOpacity="0.45" />
         <rect x={CW_X - 8} y={SHAFT_TOP} width="16" height="26" rx="1"
@@ -211,7 +473,6 @@ function ElevatorShaft({ current, arrived, go, accent }) {
           stroke={CS} strokeWidth="0.5" strokeOpacity="0.3" />
       </g>
 
-      {/* Floor beams & labels */}
       {floors.map((f, i) => {
         const y = shaftY(i);
         const active = i === current;
@@ -239,8 +500,7 @@ function ElevatorShaft({ current, arrived, go, accent }) {
         );
       })}
 
-      {/* Cabin (animated) */}
-      <g style={{ transform: `translateY(${cabinY}px)`, transition: `transform ${ANIM_MS}ms cubic-bezier(0.33,1,0.68,1)` }}>
+      <g style={{ transform: `translateY(${cabinY}px)`, transition: `transform ${doorsVisible ? 1200 : ANIM_MS}ms cubic-bezier(0.33,1,0.68,1)` }}>
         <rect x={CAB_X} y={0} width={CAB_W} height={CAB_H} rx="2"
           fill={CD} fillOpacity="0.55" stroke={CA} strokeWidth="1.4" strokeOpacity="0.75" />
         <rect x={CAB_X - 5} y={-5} width={CAB_W + 10} height="7" rx="1" fill={CS} fillOpacity="0.8" />
@@ -276,7 +536,6 @@ function ElevatorShaft({ current, arrived, go, accent }) {
   );
 }
 
-// ─── FONDO: estructura metálica que scrollea ──────────────────────────────────
 function SteelWorld({ offsetY, steel }) {
   const sections = TOTAL + 3;
   const W = 1400;
@@ -292,7 +551,6 @@ function SteelWorld({ offsetY, steel }) {
 
       <g style={{ transform: `translateY(${offsetY}px)`, transition: `transform ${ANIM_MS}ms cubic-bezier(0.33,1,0.68,1)` }}>
 
-        {/* Left I-beam column */}
         <rect x="60" y={-FLOOR_HEIGHT} width="6" height={(sections+2)*FLOOR_HEIGHT} fill={steel} fillOpacity="0.12" />
         <rect x="60" y={-FLOOR_HEIGHT} width="6" height={(sections+2)*FLOOR_HEIGHT} fill="url(#hatch)" />
         <rect x="48" y={-FLOOR_HEIGHT} width="7" height={(sections+2)*FLOOR_HEIGHT} fill={steel} fillOpacity="0.4" />
@@ -300,7 +558,6 @@ function SteelWorld({ offsetY, steel }) {
         <line x1="48" y1={-FLOOR_HEIGHT} x2="48" y2={(sections+2)*FLOOR_HEIGHT} stroke={steel} strokeWidth="0.6" strokeOpacity="0.5" />
         <line x1="73" y1={-FLOOR_HEIGHT} x2="73" y2={(sections+2)*FLOOR_HEIGHT} stroke={steel} strokeWidth="0.6" strokeOpacity="0.5" />
 
-        {/* Right I-beam column */}
         <rect x="1334" y={-FLOOR_HEIGHT} width="6" height={(sections+2)*FLOOR_HEIGHT} fill={steel} fillOpacity="0.12" />
         <rect x="1334" y={-FLOOR_HEIGHT} width="6" height={(sections+2)*FLOOR_HEIGHT} fill="url(#hatch)" />
         <rect x="1327" y={-FLOOR_HEIGHT} width="7" height={(sections+2)*FLOOR_HEIGHT} fill={steel} fillOpacity="0.4" />
@@ -308,30 +565,25 @@ function SteelWorld({ offsetY, steel }) {
         <line x1="1327" y1={-FLOOR_HEIGHT} x2="1327" y2={(sections+2)*FLOOR_HEIGHT} stroke={steel} strokeWidth="0.6" strokeOpacity="0.5" />
         <line x1="1347" y1={-FLOOR_HEIGHT} x2="1347" y2={(sections+2)*FLOOR_HEIGHT} stroke={steel} strokeWidth="0.6" strokeOpacity="0.5" />
 
-        {/* Secondary verticals */}
         {[230, 420, 700, 980, 1170].map(x => (
           <rect key={x} x={x} y={-FLOOR_HEIGHT} width="3" height={(sections+2)*FLOOR_HEIGHT} fill={steel} fillOpacity="0.09" />
         ))}
 
-        {/* Per-floor sections */}
         {Array.from({ length: sections }, (_, i) => {
           const y  = i * FLOOR_HEIGHT;
           const fi = Math.min(i, TOTAL - 1);
           const fa = floors[fi].accent;
           return (
             <g key={i}>
-              {/* Horizontal beam */}
               <rect x="48" y={y-10} width="1299" height="5"  fill={steel} fillOpacity="0.28" />
               <rect x="48" y={y-5}  width="1299" height="10" fill={steel} fillOpacity="0.10" />
               <rect x="48" y={y+5}  width="1299" height="5"  fill={steel} fillOpacity="0.28" />
               <line x1="48" y1={y-10} x2="1347" y2={y-10} stroke={steel} strokeWidth="0.7" strokeOpacity="0.5" />
               <line x1="48" y1={y+10} x2="1347" y2={y+10} stroke={steel} strokeWidth="0.7" strokeOpacity="0.5" />
 
-              {/* Gusset plates at columns */}
               <rect x="48"  y={y-18} width="34" height="36" rx="1" fill="none" stroke={fa} strokeWidth="0.9" strokeOpacity="0.4" />
               <rect x="1315" y={y-18} width="34" height="36" rx="1" fill="none" stroke={fa} strokeWidth="0.9" strokeOpacity="0.4" />
 
-              {/* Bolts */}
               {[56, 65, 74].map(bx => [-11, 11].map(dy => (
                 <g key={`${bx}${dy}`}>
                   <circle cx={bx}         cy={y+dy} r="3"   fill={steel} fillOpacity="0.5" />
@@ -341,7 +593,6 @@ function SteelWorld({ offsetY, steel }) {
                 </g>
               )))}
 
-              {/* Stiffeners */}
               {[230, 420, 700, 980, 1170].map(sx => (
                 <g key={sx}>
                   <rect x={sx-3} y={y-4} width="6" height="8" fill={steel} fillOpacity="0.38" />
@@ -350,7 +601,6 @@ function SteelWorld({ offsetY, steel }) {
                 </g>
               ))}
 
-              {/* Rivet line */}
               {[130, 200, 310, 470, 610, 790, 930, 1090, 1200, 1270].map(rx => (
                 <g key={rx}>
                   <circle cx={rx} cy={y} r="3" fillOpacity="0.28" fill={steel} />
@@ -358,19 +608,16 @@ function SteelWorld({ offsetY, steel }) {
                 </g>
               ))}
 
-              {/* X-braces left */}
               <line x1="73"  y1={y+10} x2="227" y2={y+FLOOR_HEIGHT-10} stroke={steel} strokeWidth="2.2" strokeOpacity="0.28" strokeLinecap="round" />
               <line x1="227" y1={y+10} x2="73"  y2={y+FLOOR_HEIGHT-10} stroke={steel} strokeWidth="2.2" strokeOpacity="0.28" strokeLinecap="round" />
               <circle cx="150" cy={y+FLOOR_HEIGHT/2} r="5" fill={steel} fillOpacity="0.15" stroke={steel} strokeWidth="1" strokeOpacity="0.3" />
               <circle cx="150" cy={y+FLOOR_HEIGHT/2} r="2" fill={steel} fillOpacity="0.45" />
 
-              {/* X-braces right */}
               <line x1="1173" y1={y+10} x2="1327" y2={y+FLOOR_HEIGHT-10} stroke={steel} strokeWidth="2.2" strokeOpacity="0.28" strokeLinecap="round" />
               <line x1="1327" y1={y+10} x2="1173" y2={y+FLOOR_HEIGHT-10} stroke={steel} strokeWidth="2.2" strokeOpacity="0.28" strokeLinecap="round" />
               <circle cx="1250" cy={y+FLOOR_HEIGHT/2} r="5" fill={steel} fillOpacity="0.15" stroke={steel} strokeWidth="1" strokeOpacity="0.3" />
               <circle cx="1250" cy={y+FLOOR_HEIGHT/2} r="2" fill={steel} fillOpacity="0.45" />
 
-              {/* Floor tags */}
               <text x="60" y={y-14} textAnchor="middle" fontFamily="'Courier New', monospace"
                 fontSize="10" letterSpacing="0.5" fill={fa} fillOpacity="0.5">
                 FL.{String(floors[fi].number).padStart(2,"0")}
@@ -387,13 +634,11 @@ function SteelWorld({ offsetY, steel }) {
   );
 }
 
-// ─── CABIN FRAME (foreground, fijo, colores de acero) ────────────────────────
 function CabinFrame() {
   return (
     <svg style={{ position:"fixed", left:"310px", right:0, top:0, bottom:0, width:"calc(100% - 310px)", height:"100%", pointerEvents:"none", zIndex:20 }}
       viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
 
-      {/* Top beam */}
       <rect x="58" y="16" width="884" height="20" rx="2" fill={CS} fillOpacity="0.7" />
       <rect x="58" y="12" width="884" height="7"  rx="1" fill={CD} fillOpacity="0.9" />
       {[100,175,270,380,500,620,730,825,900].map(x=>(
@@ -403,7 +648,6 @@ function CabinFrame() {
         </g>
       ))}
 
-      {/* Bottom beam */}
       <rect x="58" y="662" width="884" height="20" rx="2" fill={CS} fillOpacity="0.7" />
       <rect x="58" y="682" width="884" height="7"  rx="1" fill={CD} fillOpacity="0.9" />
       {[100,175,270,380,500,620,730,825,900].map(x=>(
@@ -413,7 +657,6 @@ function CabinFrame() {
         </g>
       ))}
 
-      {/* Left upright */}
       <rect x="58" y="12"  width="20" height="678" fill={CS} fillOpacity="0.6" />
       <rect x="52" y="12"  width="8"  height="678" fill={CD} fillOpacity="0.85" />
       {[75,155,250,345,440,535,625,700].map(y=>(
@@ -423,7 +666,6 @@ function CabinFrame() {
         </g>
       ))}
 
-      {/* Right upright */}
       <rect x="922" y="12"  width="20" height="678" fill={CS} fillOpacity="0.6" />
       <rect x="940" y="12"  width="8"  height="678" fill={CD} fillOpacity="0.85" />
       {[75,155,250,345,440,535,625,700].map(y=>(
@@ -433,7 +675,6 @@ function CabinFrame() {
         </g>
       ))}
 
-      {/* Corner gussets */}
       {[[52,12],[930,12],[52,672],[930,672]].map(([x,y],i)=>(
         <rect key={i} x={x} y={y} width="30" height="30" rx="2"
           fill={CD} fillOpacity="0.95" stroke={CA} strokeWidth="0.8" strokeOpacity="0.5"/>
@@ -446,7 +687,6 @@ function CabinFrame() {
         </g>
       ))}
 
-      {/* Guide shoes */}
       {[85,575].map(y=>(
         <g key={y}>
           <rect x="42" y={y} width="18" height="32" rx="2" fill={CD} fillOpacity="0.85"/>
@@ -454,7 +694,6 @@ function CabinFrame() {
         </g>
       ))}
 
-      {/* Cables from top */}
       <line x1="200" y1="0" x2="200" y2="12" stroke={CS} strokeWidth="3" strokeOpacity="0.7"/>
       <line x1="800" y1="0" x2="800" y2="12" stroke={CS} strokeWidth="3" strokeOpacity="0.7"/>
       <line x1="500" y1="0" x2="500" y2="12" stroke={CS} strokeWidth="4" strokeOpacity="0.45"/>
@@ -462,7 +701,6 @@ function CabinFrame() {
   );
 }
 
-// ─── APP ──────────────────────────────────────────────────────────────────────
 export default function App() {
   const [current,      setCurrent]      = useState(0);
   const [display,      setDisplay]      = useState(0);
@@ -471,6 +709,7 @@ export default function App() {
   const [doorsOpen,    setDoorsOpen]    = useState(false);
   const [doorsVisible, setDoorsVisible] = useState(true);
   const [arrived,      setArrived]      = useState(0);
+  const [introCurrent, setIntroCurrent] = useState(TOTAL - 1);
   const lastScroll = useRef(0);
   const touchY     = useRef(null);
   const animating  = useRef(false);
@@ -493,9 +732,11 @@ export default function App() {
   }, [current]);
 
   useEffect(() => {
-    const t1 = setTimeout(() => setDoorsOpen(true), 500);
-    const t2 = setTimeout(() => setDoorsVisible(false), 500 + 1600);
+    const t1 = setTimeout(() => { setDoorsOpen(true); setIntroCurrent(0); }, 300);
+    const t2 = setTimeout(() => setDoorsVisible(false), 300 + 1600);
     return () => { clearTimeout(t1); clearTimeout(t2); };
+
+
   }, []);
 
   useEffect(() => {
@@ -533,19 +774,16 @@ export default function App() {
         userSelect: "none", fontFamily: "'Georgia', serif",
       }}
     >
-      {/* ── Fondo: estructura que scrollea ── */}
       <div style={{ position: "fixed", inset: 0, zIndex: 0, overflow: "hidden" }}>
         <SteelWorld offsetY={worldOff} steel={floor.steel} />
       </div>
 
-      {/* ── Vignette central ── */}
       <div style={{
         position: "fixed", inset: 0, zIndex: 5, pointerEvents: "none",
         background: `radial-gradient(ellipse 60% 70% at 55% 50%, transparent 20%, ${floor.bg}c0 100%)`,
         transition: "background 0.9s ease",
       }} />
 
-      {/* ── Panel izquierdo: shaft del ascensor ── */}
       <div style={{
         position: "fixed", left: 0, top: 0, bottom: 0,
         width: "310px", zIndex: 35,
@@ -556,50 +794,41 @@ export default function App() {
         transition: "background 0.9s ease",
       }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "12px" }}>
-        <img src="/logo-final.png" alt="IOCA"
-          style={{ width: "200px", objectFit: "contain", marginTop: "12px", marginBottom: "8px", opacity: 0.9 }} />
-        {/* Iconos sociales */}
-        <div style={{ display: "flex", gap: "18px", alignItems: "center" }}>
-          {/* Instagram */}
-          <a href="https://instagram.com" target="_blank" rel="noreferrer"
-            style={{ opacity: 0.5, transition: "opacity 0.3s" }}
-            onMouseEnter={e => e.currentTarget.style.opacity = 1}
-            onMouseLeave={e => e.currentTarget.style.opacity = 0.5}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="2" y="2" width="20" height="20" rx="5.5" stroke={CS} strokeWidth="1.8"/>
-              <circle cx="12" cy="12" r="4.5" stroke={CS} strokeWidth="1.8"/>
-              <circle cx="17.5" cy="6.5" r="1" fill={CS}/>
-            </svg>
-          </a>
-          {/* WhatsApp */}
-          <a href="https://wa.me/" target="_blank" rel="noreferrer"
-            style={{ opacity: 0.5, transition: "opacity 0.3s" }}
-            onMouseEnter={e => e.currentTarget.style.opacity = 1}
-            onMouseLeave={e => e.currentTarget.style.opacity = 0.5}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.978-1.41A9.96 9.96 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2z" stroke={CS} strokeWidth="1.8" strokeLinejoin="round"/>
-              <path d="M8.5 9.5c.5 1 1.5 3 3.5 4s3-1 3-1-.5-1.5-1-1.5c-.4 0-.8.3-1 .5-.8-.3-2-1.5-2.3-2.3.2-.2.5-.6.5-1 0-.5-1.5-1-1.5-1S8 8.5 8.5 9.5z" fill={CS}/>
-            </svg>
-          </a>
+          <img src="/logo-final.png" alt="IOCA"
+            style={{ width: "200px", objectFit: "contain", marginTop: "12px", marginBottom: "8px", opacity: 0.9 }} />
+          <div style={{ display: "flex", gap: "18px", alignItems: "center" }}>
+            <a href="https://instagram.com" target="_blank" rel="noreferrer"
+              style={{ opacity: 0.5, transition: "opacity 0.3s" }}
+              onMouseEnter={e => e.currentTarget.style.opacity = 1}
+              onMouseLeave={e => e.currentTarget.style.opacity = 0.5}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2" y="2" width="20" height="20" rx="5.5" stroke={CS} strokeWidth="1.8"/>
+                <circle cx="12" cy="12" r="4.5" stroke={CS} strokeWidth="1.8"/>
+                <circle cx="17.5" cy="6.5" r="1" fill={CS}/>
+              </svg>
+            </a>
+            <a href="https://wa.me/" target="_blank" rel="noreferrer"
+              style={{ opacity: 0.5, transition: "opacity 0.3s" }}
+              onMouseEnter={e => e.currentTarget.style.opacity = 1}
+              onMouseLeave={e => e.currentTarget.style.opacity = 0.5}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.978-1.41A9.96 9.96 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2z" stroke={CS} strokeWidth="1.8" strokeLinejoin="round"/>
+                <path d="M8.5 9.5c.5 1 1.5 3 3.5 4s3-1 3-1-.5-1.5-1-1.5c-.4 0-.8.3-1 .5-.8-.3-2-1.5-2.3-2.3.2-.2.5-.6.5-1 0-.5-1.5-1-1.5-1S8 8.5 8.5 9.5z" fill={CS}/>
+              </svg>
+            </a>
+          </div>
         </div>
-        </div>{/* fin grupo logo+sociales */}
         <div style={{ width: "290px", flex: 1, minHeight: 0 }}>
-          <ElevatorShaft current={current} arrived={arrived} go={go} accent={floor.accent} />
+          <ElevatorShaft current={current} introCurrent={introCurrent} doorsVisible={doorsVisible} arrived={arrived} go={go} accent={floor.accent} />
         </div>
       </div>
 
-
-      {/* ── Animación: puertas de ascensor ── */}
       {doorsVisible && (
         <svg style={{ position:"fixed", left:"310px", right:0, top:0, bottom:0,
           width:"calc(100% - 310px)", height:"100%", zIndex:45,
           pointerEvents: doorsOpen ? "none" : "all" }}
-          viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+          viewBox="0 0 1000 700" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            {/* Clip al interior exacto del marco */}
-            <clipPath id="door-clip">
-              <rect x="78" y="36" width="844" height="626" />
-            </clipPath>
             <linearGradient id="door-grad-l" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%"   stopColor="#1a2828" />
               <stop offset="100%" stopColor="#243535" />
@@ -608,91 +837,73 @@ export default function App() {
               <stop offset="0%"   stopColor="#243535" />
               <stop offset="100%" stopColor="#1a2828" />
             </linearGradient>
+            <linearGradient id="shadow-l-inner" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#000" stopOpacity="0" />
+              <stop offset="100%" stopColor="#000" stopOpacity="0.4" />
+            </linearGradient>
+            <linearGradient id="shadow-r-inner" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#000" stopOpacity="0.4" />
+              <stop offset="100%" stopColor="#000" stopOpacity="0" />
+            </linearGradient>
           </defs>
 
-          <g clipPath="url(#door-clip)">
-            {/* Puerta izquierda */}
-            <g style={{
-              transformBox: "fill-box",
-              transform: doorsOpen ? "translateX(-101%)" : "translateX(0)",
-              transition: "transform 1.4s cubic-bezier(0.77,0,0.18,1)",
-            }}>
-              <rect x="78" y="36" width="422" height="626" fill="url(#door-grad-l)" />
-              {/* Paneles */}
-              {[140, 349, 558].map(y => (
-                <rect key={y} x="108" y={y} width="360" height="3" rx="1"
-                  fill={CS} fillOpacity="0.2" />
-              ))}
-              <rect x="108" y="76" width="360" height="540" rx="3"
-                fill="none" stroke={CS} strokeWidth="1.5" strokeOpacity="0.15" />
-              {/* Remaches borde derecho */}
-              {[80, 200, 349, 498, 640].map(y => (
-                <g key={y}>
-                  <circle cx="490" cy={y} r="4" fill={CR} fillOpacity="0.4" />
-                  <circle cx="490" cy={y} r="1.5" fill={CR} fillOpacity="0.7" />
-                </g>
-              ))}
-              {/* Borde de encuentro */}
-              <line x1="499" y1="36" x2="499" y2="662" stroke={CA} strokeWidth="2" strokeOpacity="0.5" />
-              {/* Sombra hacia el centro */}
-              <rect x="460" y="36" width="40" height="626"
-                fill="url(#shadow-l-inner)" />
-              <defs>
-                <linearGradient id="shadow-l-inner" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#000" stopOpacity="0" />
-                  <stop offset="100%" stopColor="#000" stopOpacity="0.4" />
-                </linearGradient>
-              </defs>
-            </g>
+          {/* Puerta izquierda */}
+          <g style={{
+            transformBox: "fill-box",
+            transform: doorsOpen ? "translateX(-101%)" : "translateX(0)",
+            transition: "transform 1.4s cubic-bezier(0.77,0,0.18,1)",
+          }}>
+            <rect x="0" y="0" width="500" height="700" fill="url(#door-grad-l)" />
+            {[196, 350, 504].map(y => (
+              <rect key={y} x="30" y={y} width="440" height="3" rx="1"
+                fill={CS} fillOpacity="0.2" />
+            ))}
+            <rect x="30" y="40" width="440" height="620" rx="3"
+              fill="none" stroke={CS} strokeWidth="1.5" strokeOpacity="0.15" />
+            {[70, 210, 350, 490, 630].map(y => (
+              <g key={y}>
+                <circle cx="462" cy={y} r="4" fill={CR} fillOpacity="0.4" />
+                <circle cx="462" cy={y} r="1.5" fill={CR} fillOpacity="0.7" />
+              </g>
+            ))}
+            <line x1="499" y1="0" x2="499" y2="700" stroke={CA} strokeWidth="2" strokeOpacity="0.5" />
+            <rect x="460" y="0" width="40" height="700" fill="url(#shadow-l-inner)" />
+          </g>
 
-            {/* Puerta derecha */}
-            <g style={{
-              transformBox: "fill-box",
-              transform: doorsOpen ? "translateX(101%)" : "translateX(0)",
-              transition: "transform 1.4s cubic-bezier(0.77,0,0.18,1)",
-            }}>
-              <rect x="500" y="36" width="422" height="626" fill="url(#door-grad-r)" />
-              {/* Paneles */}
-              {[140, 349, 558].map(y => (
-                <rect key={y} x="512" y={y} width="360" height="3" rx="1"
-                  fill={CS} fillOpacity="0.2" />
-              ))}
-              <rect x="512" y="76" width="360" height="540" rx="3"
-                fill="none" stroke={CS} strokeWidth="1.5" strokeOpacity="0.15" />
-              {/* Remaches borde izquierdo */}
-              {[80, 200, 349, 498, 640].map(y => (
-                <g key={y}>
-                  <circle cx="510" cy={y} r="4" fill={CR} fillOpacity="0.4" />
-                  <circle cx="510" cy={y} r="1.5" fill={CR} fillOpacity="0.7" />
-                </g>
-              ))}
-              {/* Borde de encuentro */}
-              <line x1="501" y1="36" x2="501" y2="662" stroke={CA} strokeWidth="2" strokeOpacity="0.5" />
-              {/* Sombra hacia el centro */}
-              <rect x="500" y="36" width="40" height="626"
-                fill="url(#shadow-r-inner)" />
-              <defs>
-                <linearGradient id="shadow-r-inner" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#000" stopOpacity="0.4" />
-                  <stop offset="100%" stopColor="#000" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-            </g>
+          {/* Puerta derecha */}
+          <g style={{
+            transformBox: "fill-box",
+            transform: doorsOpen ? "translateX(101%)" : "translateX(0)",
+            transition: "transform 1.4s cubic-bezier(0.77,0,0.18,1)",
+          }}>
+            <rect x="500" y="0" width="500" height="700" fill="url(#door-grad-r)" />
+            {[196, 350, 504].map(y => (
+              <rect key={y} x="530" y={y} width="440" height="3" rx="1"
+                fill={CS} fillOpacity="0.2" />
+            ))}
+            <rect x="530" y="40" width="440" height="620" rx="3"
+              fill="none" stroke={CS} strokeWidth="1.5" strokeOpacity="0.15" />
+            {[70, 210, 350, 490, 630].map(y => (
+              <g key={y}>
+                <circle cx="538" cy={y} r="4" fill={CR} fillOpacity="0.4" />
+                <circle cx="538" cy={y} r="1.5" fill={CR} fillOpacity="0.7" />
+              </g>
+            ))}
+            <line x1="501" y1="0" x2="501" y2="700" stroke={CA} strokeWidth="2" strokeOpacity="0.5" />
+            <rect x="500" y="0" width="40" height="700" fill="url(#shadow-r-inner)" />
           </g>
         </svg>
       )}
 
-
-      {/* ── Contenido ── */}
       <div style={{
         position: "fixed", left: "310px", right: 0, top: 0, bottom: 0, zIndex: 30,
         display: "flex", alignItems: "center", justifyContent: "center",
-        padding: display === 6 ? "68px 68px 50px 30px" : "80px 80px 80px 30px",
+        padding: display === 6 ? "40px 40px 40px 40px" : "80px 80px 80px 30px",
       }}>
         <div
           key={display}
           style={{
-            maxWidth: display === 6 ? "580px" : "480px", width: "100%",
+            maxWidth: (display === 6 || display === 5) ? "920px" : "480px", width: "100%",
             animation: transitioning
               ? `${direction === "down" ? "exitUp" : "exitDown"} 0.28s ease forwards`
               : `${direction === "down" ? "enterUp" : "enterDown"} 0.6s cubic-bezier(0.16,1,0.3,1) forwards`,
@@ -700,6 +911,8 @@ export default function App() {
         >
           {display === 6 ? (
             <PhotoSlider accent={floor.accent} steel={floor.steel} text={floor.text} />
+          ) : display === 5 ? (
+            <ClientsBelt accent={floor.accent} steel={floor.steel} text={floor.text} />
           ) : (
             <>
               <div style={{
@@ -744,7 +957,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* ── Piso actual top-right ── */}
       <div style={{
         position:"fixed", top:"60px", right:"60px", zIndex:35,
         fontFamily:"'Courier New', monospace", textAlign:"right",
@@ -757,7 +969,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* ── Nav buttons ── */}
       <div style={{
         position:"fixed", right:"20px", top:"50%", transform:"translateY(-50%)",
         display:"flex", flexDirection:"column", gap:"0.6rem", zIndex:35, alignItems:"center",
