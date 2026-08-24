@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import ModelViewer from "./ModelViewer";
 
 
 // ─── CLIENTES: cinta transportadora industrial ───────────────────────────────
@@ -254,7 +255,7 @@ function ClientsBelt({ accent, steel, text }) {
 
       {/* Footer */}
       <div style={{ fontFamily:"'Courier New', monospace", fontSize:"11px", color:steel, letterSpacing:"0.1em", opacity:0.5, display:"flex", gap:"1.5rem" }}>
-        <span>NIV. 03</span><span>+10.50 m</span><span>COTA ±0.00</span>
+        <span>NIV. 02</span><span>+7.00 m</span><span>COTA ±0.00</span>
       </div>
 
       <style>{`
@@ -285,7 +286,7 @@ function PhotoSlider({ accent, steel }) {
       {/* Header */}
       <div style={{ display:"flex", alignItems:"center", gap:"10px", flexShrink:0 }}>
         <div style={{ width:"28px", height:"1.5px", background:accent }}/>
-        <span style={{ fontFamily:"'Courier New', monospace", fontSize:"12px", letterSpacing:"0.16em", color:accent, textTransform:"uppercase" }}>La obra en marcha</span>
+        <span style={{ fontFamily:"'Courier New', monospace", fontSize:"12px", letterSpacing:"0.16em", color:accent, textTransform:"uppercase" }}>Nuestras obras</span>
       </div>
 
       {/* Grid de thumbnails — cuadrados */}
@@ -322,7 +323,7 @@ function PhotoSlider({ accent, steel }) {
 
       {/* Footer */}
       <div style={{ fontFamily:"'Courier New', monospace", fontSize:"12px", color:steel, letterSpacing:"0.1em", opacity:0.5, display:"flex", gap:"1rem", flexShrink:0 }}>
-        <span>NIV. 02</span><span>+7.00 m</span><span>COTA ±0.00</span>
+        <span>NIV. 03</span><span>+10.50 m</span><span>COTA ±0.00</span>
       </div>
 
       {/* Lightbox */}
@@ -392,19 +393,172 @@ function PhotoSlider({ accent, steel }) {
   );
 }
 
-const TOTAL = 8;
+// ─── EDIFICIOS Y VIVIENDAS: fichas de obra ────────────────────────────────
+const EDIFICIOS_DATA = [
+  { cliente: "Moschini",     obra: "Nuñez",                m2: 950,  ubicacion: "Villa Urquiza, CABA", model: "nunez" },
+  { cliente: "TdAs",         obra: "Aristóbulo",           m2: 2600, ubicacion: "Lanús", model: "aristobulo" },
+  { cliente: "Acosta",       obra: "Bogotá",                m2: 2400, ubicacion: "Gral. Pacheco, Tigre", model: "bogota" },
+  { cliente: "Ganzabal",     obra: "Locales Buena Vista",   m2: 1300, ubicacion: "Victoria, San Fernando", model: "locales-buena-vista" },
+  { cliente: "TdAs",         obra: "Sixto 195",             m2: 5400, ubicacion: "Las Lomitas, Lomas de Zamora" },
+  { cliente: "Cubero-Rubio", obra: "AR2235",                m2: 5800, ubicacion: "Palermo, CABA", model: "ar2235" },
+];
+
+const VIVIENDAS_DATA = [
+  { cliente: "GBG Arquitectos", obra: "Steel deck",                                    m2: 210, ubicacion: "El Rebenque, Canning" },
+  { cliente: "NNN Estudio",     obra: "Estructura de madera",                          m2: 260, ubicacion: "Luján" },
+  { cliente: "ALM Arqs",        obra: "Remodelación · muros portantes y viguetas",     m2: 320, ubicacion: "Coghlan, CABA" },
+  { cliente: "TdAs",            obra: "Hormigón armado",                               m2: 685, ubicacion: "Adrogué, Alte. Brown" },
+  { cliente: "AORA",            obra: "Hormigón armado y viguetas",                    m2: 460, ubicacion: "Medal, Pilar" },
+  { cliente: "TdAs",            obra: "Hormigón armado",                               m2: 355, ubicacion: "El Salvaje, Mar de las Pampas" },
+];
+
+function WorksGrid({ floor, items }) {
+  const { accent, steel, text } = floor;
+  const [selected, setSelected] = useState(null);
+
+  return (
+    <div style={{ width:"100%", maxWidth:"920px", display:"flex", flexDirection:"column", gap:"28px" }}>
+
+      {/* Header */}
+      <div>
+        <div style={{ display:"flex", alignItems:"center", gap:"10px", marginBottom:"0.8rem" }}>
+          <div style={{ width:"28px", height:"1.5px", background:accent }}/>
+          <span style={{ fontFamily:"'Courier New', monospace", fontSize:"11px", letterSpacing:"0.16em", color:accent, textTransform:"uppercase" }}>{floor.subtitle}</span>
+        </div>
+        <h1 style={{ fontSize:"clamp(38px, 5vw, 64px)", fontWeight:"normal", color:text, margin:0, lineHeight:0.95, letterSpacing:"-0.03em" }}>{floor.title}</h1>
+        <p style={{ fontSize:"15px", color:text, lineHeight:"1.8", margin:"1rem 0 0", opacity:0.65, maxWidth:"620px" }}>{floor.description}</p>
+      </div>
+
+      {/* Grid de fichas */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:"14px" }}>
+        {items.map((it, i) => (
+          <div key={i} onClick={() => setSelected(it)} style={{
+            position:"relative", cursor:"pointer", padding:"20px 16px",
+            border:`1px solid ${accent}33`, background:`${accent}0a`,
+            transition:"all 0.25s", minHeight:"150px",
+            display:"flex", flexDirection:"column", justifyContent:"space-between",
+          }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.background = `${accent}18`; e.currentTarget.style.transform = "translateY(-3px)"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = `${accent}33`; e.currentTarget.style.background = `${accent}0a`; e.currentTarget.style.transform = "translateY(0)"; }}
+          >
+            {[[0,0],[1,0],[0,1],[1,1]].map(([r,b],ci) => (
+              <div key={ci} style={{
+                position:"absolute", width:"10px", height:"10px",
+                top:b===0?0:"auto", bottom:b===1?0:"auto",
+                left:r===0?0:"auto", right:r===1?0:"auto",
+                borderTop:    b===0?`1.5px solid ${accent}`:"none",
+                borderBottom: b===1?`1.5px solid ${accent}`:"none",
+                borderLeft:   r===0?`1.5px solid ${accent}`:"none",
+                borderRight:  r===1?`1.5px solid ${accent}`:"none",
+                opacity:0.7,
+              }}/>
+            ))}
+            <div style={{ fontFamily:"'Courier New', monospace", fontSize:"9px", letterSpacing:"0.18em", color:accent, opacity:0.6 }}>
+              {String(i+1).padStart(2,"0")} / 06
+            </div>
+            <div>
+              <div style={{ fontFamily:"Georgia, serif", fontSize:"18px", color:text, marginBottom:"4px", letterSpacing:"-0.01em" }}>{it.obra}</div>
+              <div style={{ fontFamily:"'Courier New', monospace", fontSize:"10px", letterSpacing:"0.1em", color:steel, textTransform:"uppercase" }}>{it.cliente}</div>
+            </div>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", fontFamily:"'Courier New', monospace", fontSize:"10px", color:accent, opacity:0.85, gap:"8px" }}>
+              <span style={{ flexShrink:0 }}>{it.m2} m²</span>
+              <span style={{ opacity:0.6, textAlign:"right" }}>{it.ubicacion}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Footer */}
+      <div style={{ fontFamily:"'Courier New', monospace", fontSize:"11px", color:steel, letterSpacing:"0.1em", opacity:0.5, display:"flex", gap:"1.5rem" }}>
+        <span>NIV. {String(floor.number).padStart(2,"0")}</span><span>+{(floor.number*3.5).toFixed(2)} m</span><span>COTA ±0.00</span>
+      </div>
+
+      {/* Modal: ficha técnica */}
+      {selected && (
+        <div onClick={() => setSelected(null)} style={{
+          position:"fixed", inset:0, zIndex:200,
+          background:"rgba(0,0,0,0.7)",
+          display:"flex", alignItems:"center", justifyContent:"center",
+          cursor:"pointer",
+        }}>
+          <div onClick={e => e.stopPropagation()} onWheel={e => e.stopPropagation()} style={{
+            background:"#0d0c14", border:`1px solid ${accent}66`,
+            padding:"40px 44px", maxWidth: selected.model ? "840px" : "460px", width:"90%",
+            position:"relative", cursor:"default",
+          }}>
+            {[[0,0],[1,0],[0,1],[1,1]].map(([r,b],i) => (
+              <div key={i} style={{
+                position:"absolute",
+                top:b===0?0:"auto", bottom:b===1?0:"auto",
+                left:r===0?0:"auto", right:r===1?0:"auto",
+                width:"16px", height:"16px",
+                borderTop:    b===0?`2px solid ${accent}`:"none",
+                borderBottom: b===1?`2px solid ${accent}`:"none",
+                borderLeft:   r===0?`2px solid ${accent}`:"none",
+                borderRight:  r===1?`2px solid ${accent}`:"none",
+              }}/>
+            ))}
+            <div style={{ fontFamily:"'Courier New', monospace", fontSize:"12px", letterSpacing:"0.2em", color:accent, marginBottom:"8px", textTransform:"uppercase" }}>Ficha técnica</div>
+            <h2 style={{ fontFamily:"Georgia, serif", fontSize:"32px", fontWeight:"normal", color:"#f5f5f5", margin:"0 0 22px", letterSpacing:"-0.02em" }}>{selected.obra}</h2>
+            <div style={{ width:"36px", height:"1.5px", background:accent, marginBottom:"22px" }}/>
+
+            <div style={{ display:"flex", gap:"32px", flexDirection: selected.model ? "row" : "column", flexWrap:"wrap" }}>
+              {selected.model && (
+                <div style={{
+                  flex:"1 1 380px", height:"360px",
+                  border:`1px solid ${accent}33`, background:"linear-gradient(180deg, #eef1f2 0%, #dde2e5 100%)",
+                  position:"relative", overflow:"hidden",
+                }}>
+                  <ModelViewer slug={selected.model} accent={accent} />
+                  <div style={{
+                    position:"absolute", bottom:"8px", left:"10px", pointerEvents:"none",
+                    fontFamily:"'Courier New', monospace", fontSize:"9px", letterSpacing:"0.1em",
+                    color:"#3a444d", opacity:0.7, background:"rgba(255,255,255,0.6)", padding:"3px 8px",
+                  }}>🖱️ ARRASTRAR PARA ROTAR · RUEDA PARA ZOOM</div>
+                </div>
+              )}
+
+              <div style={{ flex:"1 1 220px", display:"flex", flexDirection:"column", gap:"18px" }}>
+                {[
+                  ["Cliente", selected.cliente],
+                  ["Obra", selected.obra],
+                  ["Superficie", `${selected.m2} m²`],
+                  ["Ubicación", selected.ubicacion],
+                ].map(([label, value]) => (
+                  <div key={label} style={{ display:"flex", justifyContent:"space-between", gap:"20px", borderBottom:`1px solid ${accent}22`, paddingBottom:"12px" }}>
+                    <span style={{ fontFamily:"'Courier New', monospace", fontSize:"12px", letterSpacing:"0.14em", color:accent, opacity:0.9, textTransform:"uppercase", flexShrink:0 }}>{label}</span>
+                    <span style={{ fontFamily:"'Courier New', monospace", fontSize:"15px", color:"rgba(255,255,255,0.85)", textAlign:"right" }}>{value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <button onClick={() => setSelected(null)} style={{
+              background:"transparent", border:`1px solid ${accent}66`,
+              color:accent, padding:"8px 20px", marginTop:"30px",
+              fontFamily:"'Courier New', monospace", fontSize:"10px",
+              letterSpacing:"0.15em", cursor:"pointer", textTransform:"uppercase",
+            }}>Cerrar</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const TOTAL = 7;
 const FLOOR_HEIGHT = 220;
 const ANIM_MS = 850;
+const WIDE_FLOORS = new Set([1, 2, 5]); // Viviendas, Edificios, Clientes
 
 const floors = [
-  { number: 8, label: "ÁTICO",   title: "Visión",       subtitle: "Donde todo comienza",      description: "Cada gran proyecto nace de una idea en las alturas. Diseñamos el futuro desde la perspectiva más amplia.", accent: "#c8a96e", bg: "#0c0a06", text: "#f5edd8", steel: "#6a5a3a" },
-  { number: 7, label: "PISO 7",  title: "Estructuras",  subtitle: "La columna vertebral",     description: "Calculamos cargas, tensiones y momentos. Cada viga responde a fuerzas que el ojo no ve pero la física nunca olvida.", accent: "#7ab0d4", bg: "#050810", text: "#d8eaf5", steel: "#2a4a6a" },
-  { number: 6, label: "PISO 6",  title: "Fundaciones",  subtitle: "Lo que sostiene todo",     description: "El suelo habla si sabés escucharlo. Estudiamos cada estrato para que lo que construimos dure generaciones.", accent: "#b87a5a", bg: "#100806", text: "#f5e0d8", steel: "#6a3a2a" },
-  { number: 5, label: "PISO 5",  title: "Hidráulica",   subtitle: "El flujo como ingeniería", description: "El agua sigue leyes exactas. Diseñamos redes, drenajes y sistemas que respetan cada milímetro de presión.", accent: "#5a9ab0", bg: "#05090e", text: "#d8eef5", steel: "#2a5a6a" },
-  { number: 4, label: "PISO 4",  title: "Materiales",   subtitle: "Elegir con precisión",     description: "Acero, hormigón, compuestos. Cada material tiene un propósito; equivocarse en la elección no es una opción.", accent: "#9a9a7a", bg: "#090906", text: "#f0f0e0", steel: "#5a5a3a" },
-  { number: 3, label: "PISO 3",  title: "Clientes",     subtitle: "Quienes confían en nosotros",  description: "Empresas que eligen rigor, precisión y experiencia para sus proyectos más exigentes.", accent: "#8a7ac8", bg: "#07060e", text: "#e4d8f5", steel: "#3a3a6a" },
-  { number: 2, label: "PISO 2",  title: "Construcción", subtitle: "La obra en marcha",        description: "Supervisamos cada etapa. La ingeniería no termina en el escritorio; vive y respira en el sitio de obra.", accent: "#7ab87a", bg: "#050e05", text: "#d8f5d8", steel: "#2a5a2a" },
-  { number: 1, label: "P. BAJA", title: "Contacto",     subtitle: "Tu proyecto empieza aquí", description: "Estudio de ingeniería con más de 20 años de experiencia. Contanos tu desafío y lo convertimos en estructura.", accent: "#c0c0c0", bg: "#080808", text: "#f5f5f5", steel: "#5a5a5a" },
+  { number: 7, label: "ÁTICO",   title: "Visión",                   subtitle: "Donde todo comienza",              description: "Cada gran proyecto nace de una idea en las alturas. Diseñamos el futuro desde la perspectiva más amplia.", accent: "#c8a96e", bg: "#0c0a06", text: "#f5edd8", steel: "#6a5a3a" },
+  { number: 6, label: "PISO 6",  title: "Viviendas",                subtitle: "Diseño y cálculo habitacional",    description: "Calculamos y proyectamos estructuras para viviendas unifamiliares y multifamiliares. Desde la fundación hasta la cubierta, cada detalle importa.", accent: "#b87a5a", bg: "#100806", text: "#f5e0d8", steel: "#6a3a2a" },
+  { number: 5, label: "PISO 5",  title: "Edificios",                subtitle: "Estructuras en altura",            description: "Diseño estructural para edificios en altura. Sistemas de hormigón armado y acero que cumplen con las máximas exigencias sísmicas y normativas vigentes.", accent: "#5a9ab0", bg: "#05090e", text: "#d8eef5", steel: "#2a5a6a" },
+  { number: 4, label: "PISO 4",  title: "Naves industriales",       lines: ["NAVES", "INDUSTRIALES"],        subtitle: "Galpones y estructuras metálicas", description: "Galpones, depósitos y plantas industriales. Estructuras metálicas livianas y pesadas diseñadas para maximizar la funcionalidad y minimizar los costos.", accent: "#9a9a7a", bg: "#090906", text: "#f0f0e0", steel: "#5a5a3a" },
+  { number: 3, label: "PISO 3",  title: "Patologías estructurales", lines: ["PATOLOGÍAS", "ESTRUCTURALES"],  subtitle: "Diagnóstico estructural",          description: "Diagnóstico y reparación de estructuras dañadas. Relevamos, analizamos y proponemos soluciones para edificios con problemas estructurales.", accent: "#7ab87a", bg: "#050e05", text: "#d8f5d8", steel: "#2a5a2a" },
+  { number: 2, label: "PISO 2",  title: "Clientes",                 subtitle: "Quienes confían en nosotros",      description: "Empresas que eligen rigor, precisión y experiencia para sus proyectos más exigentes.", accent: "#8a7ac8", bg: "#07060e", text: "#e4d8f5", steel: "#3a3a6a" },
+  { number: 1, label: "P. BAJA", title: "Contacto",                 subtitle: "Tu proyecto empieza aquí",        description: "Estudio de ingeniería con más de 20 años de experiencia. Contanos tu desafío y lo convertimos en estructura.", accent: "#c0c0c0", bg: "#080808", text: "#f5f5f5", steel: "#5a5a5a" },
 ];
 
 const CS  = "#7a8a8a";
@@ -489,12 +643,14 @@ function ElevatorShaft({ current, introCurrent, doorsVisible, arrived, go, accen
               {String(f.number).padStart(2, "0")}
             </text>
             {i === arrived && <line x1="185" y1={y} x2="198" y2={y} stroke={accent} strokeWidth="1.5" strokeOpacity="0.9" />}
-            <text x="202" y={y + 5} fontFamily="'Courier New', monospace" fontSize="14"
+            <text x="202" y={f.lines ? y - 3 : y + 5} fontFamily="'Courier New', monospace" fontSize="14"
               fill={i === arrived ? accent : "#ffffff"}
               fillOpacity={i === arrived ? 1 : 0.45}
               filter={i === arrived ? "url(#neon)" : undefined}
               letterSpacing="0.8" textAnchor="start">
-              {f.title.toUpperCase()}
+              {f.lines
+                ? f.lines.map((line, li) => <tspan key={li} x="202" dy={li === 0 ? 0 : 15}>{line}</tspan>)
+                : f.title.toUpperCase()}
             </text>
           </g>
         );
@@ -898,19 +1054,21 @@ export default function App() {
       <div style={{
         position: "fixed", left: "310px", right: 0, top: 0, bottom: 0, zIndex: 30,
         display: "flex", alignItems: "center", justifyContent: "center",
-        padding: display === 6 ? "40px 40px 40px 40px" : "80px 80px 80px 30px",
+        padding: WIDE_FLOORS.has(display) ? "40px 40px 40px 40px" : "80px 80px 80px 30px",
       }}>
         <div
           key={display}
           style={{
-            maxWidth: (display === 6 || display === 5) ? "920px" : "480px", width: "100%",
+            maxWidth: WIDE_FLOORS.has(display) ? "920px" : "480px", width: "100%",
             animation: transitioning
               ? `${direction === "down" ? "exitUp" : "exitDown"} 0.28s ease forwards`
               : `${direction === "down" ? "enterUp" : "enterDown"} 0.6s cubic-bezier(0.16,1,0.3,1) forwards`,
           }}
         >
-          {display === 6 ? (
-            <PhotoSlider accent={floor.accent} steel={floor.steel} text={floor.text} />
+          {display === 1 ? (
+            <WorksGrid floor={floor} items={VIVIENDAS_DATA} />
+          ) : display === 2 ? (
+            <WorksGrid floor={floor} items={EDIFICIOS_DATA} />
           ) : display === 5 ? (
             <ClientsBelt accent={floor.accent} steel={floor.steel} text={floor.text} />
           ) : (
