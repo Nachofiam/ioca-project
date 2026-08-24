@@ -232,6 +232,13 @@ function ClientsBelt({ accent, steel, text }) {
                 borderRight:  r===1?`2px solid ${selected.color}`:"none",
               }}/>
             ))}
+            <button onClick={closeModal} aria-label="Cerrar" style={{
+              position:"absolute", top:"14px", right:"14px",
+              width:"26px", height:"26px", display:"flex", alignItems:"center", justifyContent:"center",
+              background:"transparent", border:`1px solid ${selected.color}55`,
+              color:selected.color, fontFamily:"'Courier New', monospace", fontSize:"14px",
+              lineHeight:1, cursor:"pointer",
+            }}>×</button>
             <div style={{
               width:"60px", height:"60px", borderRadius:"50%",
               background:`${selected.color}22`, border:`2px solid ${selected.color}88`,
@@ -498,6 +505,13 @@ function WorksGrid({ floor, items }) {
                 borderRight:  r===1?`2px solid ${accent}`:"none",
               }}/>
             ))}
+            <button onClick={() => setSelected(null)} aria-label="Cerrar" style={{
+              position:"absolute", top:"14px", right:"14px",
+              width:"26px", height:"26px", display:"flex", alignItems:"center", justifyContent:"center",
+              background:"transparent", border:`1px solid ${accent}55`,
+              color:accent, fontFamily:"'Courier New', monospace", fontSize:"14px",
+              lineHeight:1, cursor:"pointer",
+            }}>×</button>
             <div style={{ fontFamily:"'Courier New', monospace", fontSize:"12px", letterSpacing:"0.2em", color:accent, marginBottom:"8px", textTransform:"uppercase" }}>Ficha técnica</div>
             <h2 style={{ fontFamily:"Georgia, serif", fontSize:"32px", fontWeight:"normal", color:"#f5f5f5", margin:"0 0 22px", letterSpacing:"-0.02em" }}>{selected.obra}</h2>
             <div style={{ width:"36px", height:"1.5px", background:accent, marginBottom:"22px" }}/>
