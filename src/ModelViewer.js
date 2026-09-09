@@ -133,10 +133,13 @@ export default function ModelViewer({ slug, accent }) {
         const dy = bounds.maxY - bounds.minY;
         const dz = bounds.maxZ - bounds.minZ;
         const diag = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        radius = diag * 0.85;
+        // Encajar la esfera envolvente en el campo de visión más estrecho.
+        const halfVerticalFov = THREE.MathUtils.degToRad(camera.fov / 2);
+        const halfHorizontalFov = Math.atan(Math.tan(halfVerticalFov) * camera.aspect);
+        radius = (diag / 2) / Math.sin(Math.min(halfVerticalFov, halfHorizontalFov)) * 1.05;
         minR = diag * 0.18;
-        maxR = diag * 2.5;
-        target = new THREE.Vector3(0, dy * 0.42, 0);
+        maxR = Math.max(diag * 2.5, radius * 2);
+        target = new THREE.Vector3(0, dy / 2, 0);
 
         const ground = new THREE.Mesh(
           new THREE.CircleGeometry(diag * 1.4, 48),

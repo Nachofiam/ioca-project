@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import ModelViewer from "./ModelViewer";
+import ProjectModelViewer from "./ProjectModelViewer";
 
 
 // ─── CLIENTES: cinta transportadora industrial ───────────────────────────────
@@ -400,7 +400,7 @@ function PhotoSlider({ accent, steel }) {
   );
 }
 
-// ─── EDIFICIOS Y VIVIENDAS: fichas de obra ────────────────────────────────
+// ─── EDIFICIOS, VIVIENDAS Y NAVES: fichas de obra ─────────────────────────
 const EDIFICIOS_DATA = [
   { cliente: "Moschini",     obra: "Nuñez",                m2: 950,  ubicacion: "Villa Urquiza, CABA", model: "nunez" },
   { cliente: "TdAs",         obra: "Aristóbulo",           m2: 2600, ubicacion: "Lanús", model: "aristobulo" },
@@ -411,13 +411,37 @@ const EDIFICIOS_DATA = [
 ];
 
 const VIVIENDAS_DATA = [
-  { cliente: "GBG Arquitectos", obra: "Steel deck",                                    m2: 210, ubicacion: "El Rebenque, Canning" },
-  { cliente: "NNN Estudio",     obra: "Estructura de madera",                          m2: 260, ubicacion: "Luján" },
-  { cliente: "ALM Arqs",        obra: "Remodelación · muros portantes y viguetas",     m2: 320, ubicacion: "Coghlan, CABA" },
-  { cliente: "TdAs",            obra: "Hormigón armado",                               m2: 685, ubicacion: "Adrogué, Alte. Brown" },
-  { cliente: "AORA",            obra: "Hormigón armado y viguetas",                    m2: 460, ubicacion: "Medal, Pilar" },
-  { cliente: "TdAs",            obra: "Hormigón armado",                               m2: 355, ubicacion: "El Salvaje, Mar de las Pampas" },
+  { cliente: "GBG Arquitectos", obra: "Steel deck",                                    m2: 210, ubicacion: "El Rebenque, Canning", model: "canning" },
+  { cliente: "NNN Estudio",     obra: "Estructura de madera",                          m2: 260, ubicacion: "Luján", model: "lujan" },
+  { cliente: "ALM Arqs",        obra: "Remodelación · muros portantes y viguetas",     m2: 320, ubicacion: "Coghlan, CABA", model: "coghlan" },
+  { cliente: "TdAs",            obra: "Hormigón armado",                               m2: 685, ubicacion: "Adrogué, Alte. Brown", model: "adrogue" },
+  { cliente: "AORA",            obra: "Hormigón armado y viguetas",                    m2: 460, ubicacion: "Medal, Pilar", model: "medal-pilar" },
+  { cliente: "TdAs",            obra: "Hormigón armado",                               m2: 355, ubicacion: "El Salvaje, Mar de las Pampas", model: "el-salvaje" },
 ];
+
+// Fuente: Contenido WEB - Version B.xlsx, Hoja1, filas 20–24.
+const NAVES_DATA = [
+  { cliente: "GAMMA Sudamericana", obra: "Estación de servicio AXION", tipo: "Estructura reticulada / Shop de hormigón", m2: "950 + 700", ubicacion: "San Vicente", model: "san-vicente" },
+  { cliente: "LUMMA", obra: "Cine 3D", tipo: "Estructura metálica", superficie: "Sala: 500 m² + Pantalla: 350 m²", ubicacion: "Eco Parque, CABA", model: "lumma" },
+  { cliente: "Constructora Lomas", obra: "Plásticos SP", tipo: "Alma llena / Oficinas de hormigón", m2: "2800 + 150", ubicacion: "Burzaco", model: "plasticos-sp" },
+  { cliente: "BLASTAC", obra: "Nave Producción", tipo: "Alma llena / Oficinas metálicas y prelosas", m2: "1200 + 350", ubicacion: "Parque industrial RN6, Cardales", model: "blastac" },
+  { cliente: "BTU", obra: "Naves Containers", tipo: "Naves contenedores / Reticuladas", m2: 1200, ubicacion: "Ezeiza", model: "btu" },
+];
+
+// Fuente: Contenido WEB - Version B.xlsx, Hoja1, filas 27–30.
+const PATOLOGIAS_DATA = [
+  { cliente: "AUSOL", obra: "Pasarelas / Refugios", ubicacion: "Vicente López", model: "ausol" },
+  { cliente: "La Nueva Metropol", obra: "Verificación de naves metálicas", m2: 1250, ubicacion: "Merlo", model: "metropol" },
+  { cliente: "Palacio Alsina", obra: "Palacio Alsina" },
+  { cliente: "FAMIQ", obra: "Verificación estructural", tipo: "Estructura reticulada", m2: 13000, ubicacion: "El Triángulo, Garín", model: "famiq-con-hormigon", modelVariants: [
+    { model: "famiq-con-hormigon", label: "Con hormigón" },
+    { model: "famiq-sin-hormigon", label: "Sin hormigón" },
+  ] },
+];
+
+function workSurface(item) {
+  return item.superficie || (item.m2 != null ? `${item.m2} m²` : "");
+}
 
 function WorksGrid({ floor, items }) {
   const { accent, steel, text } = floor;
@@ -461,14 +485,14 @@ function WorksGrid({ floor, items }) {
               }}/>
             ))}
             <div style={{ fontFamily:"'Courier New', monospace", fontSize:"9px", letterSpacing:"0.18em", color:accent, opacity:0.6 }}>
-              {String(i+1).padStart(2,"0")} / 06
+              {String(i+1).padStart(2,"0")} / {String(items.length).padStart(2,"0")}
             </div>
             <div>
               <div style={{ fontFamily:"Georgia, serif", fontSize:"18px", color:text, marginBottom:"4px", letterSpacing:"-0.01em" }}>{it.obra}</div>
               <div style={{ fontFamily:"'Courier New', monospace", fontSize:"10px", letterSpacing:"0.1em", color:steel, textTransform:"uppercase" }}>{it.cliente}</div>
             </div>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", fontFamily:"'Courier New', monospace", fontSize:"10px", color:accent, opacity:0.85, gap:"8px" }}>
-              <span style={{ flexShrink:0 }}>{it.m2} m²</span>
+              <span style={{ flexShrink:it.superficie ? 1 : 0 }}>{workSurface(it)}</span>
               <span style={{ opacity:0.6, textAlign:"right" }}>{it.ubicacion}</span>
             </div>
           </div>
@@ -523,7 +547,7 @@ function WorksGrid({ floor, items }) {
                   border:`1px solid ${accent}33`, background:"linear-gradient(180deg, #eef1f2 0%, #dde2e5 100%)",
                   position:"relative", overflow:"hidden",
                 }}>
-                  <ModelViewer slug={selected.model} accent={accent} />
+                  <ProjectModelViewer key={selected.model} model={selected.model} variants={selected.modelVariants} accent={accent} />
                   <div style={{
                     position:"absolute", bottom:"8px", left:"10px", pointerEvents:"none",
                     fontFamily:"'Courier New', monospace", fontSize:"9px", letterSpacing:"0.1em",
@@ -536,9 +560,10 @@ function WorksGrid({ floor, items }) {
                 {[
                   ["Cliente", selected.cliente],
                   ["Obra", selected.obra],
-                  ["Superficie", `${selected.m2} m²`],
+                  ...(selected.tipo ? [["Tipo", selected.tipo]] : []),
+                  ["Superficie", workSurface(selected)],
                   ["Ubicación", selected.ubicacion],
-                ].map(([label, value]) => (
+                ].filter(([, value]) => value).map(([label, value]) => (
                   <div key={label} style={{ display:"flex", justifyContent:"space-between", gap:"20px", borderBottom:`1px solid ${accent}22`, paddingBottom:"12px" }}>
                     <span style={{ fontFamily:"'Courier New', monospace", fontSize:"12px", letterSpacing:"0.14em", color:accent, opacity:0.9, textTransform:"uppercase", flexShrink:0 }}>{label}</span>
                     <span style={{ fontFamily:"'Courier New', monospace", fontSize:"15px", color:"rgba(255,255,255,0.85)", textAlign:"right" }}>{value}</span>
@@ -560,17 +585,18 @@ function WorksGrid({ floor, items }) {
   );
 }
 
-const TOTAL = 7;
+const TOTAL = 8;
 const FLOOR_HEIGHT = 220;
 const ANIM_MS = 850;
-const WIDE_FLOORS = new Set([1, 2, 5]); // Viviendas, Edificios, Clientes
+const WIDE_FLOORS = new Set([1, 2, 3, 4, 6]); // Viviendas, Edificios, Naves, Patologías, Clientes
 
 const floors = [
-  { number: 7, label: "ÁTICO",   title: "Visión",                   subtitle: "Donde todo comienza",              description: "Cada gran proyecto nace de una idea en las alturas. Diseñamos el futuro desde la perspectiva más amplia.", accent: "#c8a96e", bg: "#0c0a06", text: "#f5edd8", steel: "#6a5a3a" },
-  { number: 6, label: "PISO 6",  title: "Viviendas",                subtitle: "Diseño y cálculo habitacional",    description: "Calculamos y proyectamos estructuras para viviendas unifamiliares y multifamiliares. Desde la fundación hasta la cubierta, cada detalle importa.", accent: "#b87a5a", bg: "#100806", text: "#f5e0d8", steel: "#6a3a2a" },
-  { number: 5, label: "PISO 5",  title: "Edificios",                subtitle: "Estructuras en altura",            description: "Diseño estructural para edificios en altura. Sistemas de hormigón armado y acero que cumplen con las máximas exigencias sísmicas y normativas vigentes.", accent: "#5a9ab0", bg: "#05090e", text: "#d8eef5", steel: "#2a5a6a" },
-  { number: 4, label: "PISO 4",  title: "Naves industriales",       lines: ["NAVES", "INDUSTRIALES"],        subtitle: "Galpones y estructuras metálicas", description: "Galpones, depósitos y plantas industriales. Estructuras metálicas livianas y pesadas diseñadas para maximizar la funcionalidad y minimizar los costos.", accent: "#9a9a7a", bg: "#090906", text: "#f0f0e0", steel: "#5a5a3a" },
-  { number: 3, label: "PISO 3",  title: "Patologías estructurales", lines: ["PATOLOGÍAS", "ESTRUCTURALES"],  subtitle: "Diagnóstico estructural",          description: "Diagnóstico y reparación de estructuras dañadas. Relevamos, analizamos y proponemos soluciones para edificios con problemas estructurales.", accent: "#7ab87a", bg: "#050e05", text: "#d8f5d8", steel: "#2a5a2a" },
+  { number: 8, label: "ÁTICO",   title: "Visión",                   subtitle: "Donde todo comienza",              description: "Cada gran proyecto nace de una idea en las alturas. Diseñamos el futuro desde la perspectiva más amplia.", accent: "#c8a96e", bg: "#0c0a06", text: "#f5edd8", steel: "#6a5a3a" },
+  { number: 7, label: "PISO 7",  title: "Viviendas",                subtitle: "Diseño y cálculo habitacional",    description: "Calculamos y proyectamos estructuras para viviendas unifamiliares y multifamiliares. Desde la fundación hasta la cubierta, cada detalle importa.", accent: "#b87a5a", bg: "#100806", text: "#f5e0d8", steel: "#6a3a2a" },
+  { number: 6, label: "PISO 6",  title: "Edificios",                subtitle: "Estructuras en altura",            description: "Diseño estructural para edificios en altura. Sistemas de hormigón armado y acero que cumplen con las máximas exigencias sísmicas y normativas vigentes.", accent: "#5a9ab0", bg: "#05090e", text: "#d8eef5", steel: "#2a5a6a" },
+  { number: 5, label: "PISO 5",  title: "Naves industriales",       lines: ["NAVES", "INDUSTRIALES"],        subtitle: "Galpones y estructuras metálicas", description: "Galpones, depósitos y plantas industriales. Estructuras metálicas livianas y pesadas diseñadas para maximizar la funcionalidad y minimizar los costos.", accent: "#9a9a7a", bg: "#090906", text: "#f0f0e0", steel: "#5a5a3a" },
+  { number: 4, label: "PISO 4",  title: "Patologías estructurales", lines: ["PATOLOGÍAS", "ESTRUCTURALES"],  subtitle: "Diagnóstico estructural",          description: "Diagnóstico y reparación de estructuras dañadas. Relevamos, analizamos y proponemos soluciones para edificios con problemas estructurales.", accent: "#7ab87a", bg: "#050e05", text: "#d8f5d8", steel: "#2a5a2a" },
+  { number: 3, label: "PISO 3",  title: "Obras especiales",         lines: ["OBRAS", "ESPECIALES"],          subtitle: "Proyectos fuera de lo convencional", description: "Cálculo y proyecto de estructuras atípicas: tanques, silos, chimeneas, muros de contención y fundaciones especiales para equipos e instalaciones singulares.", accent: "#c85a5a", bg: "#0e0505", text: "#f5d8d8", steel: "#5a2a2a" },
   { number: 2, label: "PISO 2",  title: "Clientes",                 subtitle: "Quienes confían en nosotros",      description: "Empresas que eligen rigor, precisión y experiencia para sus proyectos más exigentes.", accent: "#8a7ac8", bg: "#07060e", text: "#e4d8f5", steel: "#3a3a6a" },
   { number: 1, label: "P. BAJA", title: "Contacto",                 subtitle: "Tu proyecto empieza aquí",        description: "Estudio de ingeniería con más de 20 años de experiencia. Contanos tu desafío y lo convertimos en estructura.", accent: "#c0c0c0", bg: "#080808", text: "#f5f5f5", steel: "#5a5a5a" },
 ];
@@ -1083,7 +1109,11 @@ export default function App() {
             <WorksGrid floor={floor} items={VIVIENDAS_DATA} />
           ) : display === 2 ? (
             <WorksGrid floor={floor} items={EDIFICIOS_DATA} />
-          ) : display === 5 ? (
+          ) : display === 3 ? (
+            <WorksGrid floor={floor} items={NAVES_DATA} />
+          ) : display === 4 ? (
+            <WorksGrid floor={floor} items={PATOLOGIAS_DATA} />
+          ) : display === 6 ? (
             <ClientsBelt accent={floor.accent} steel={floor.steel} text={floor.text} />
           ) : (
             <>

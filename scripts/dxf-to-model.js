@@ -35,7 +35,13 @@ function extract(dxfPath) {
     const corners = [];
     const faces = [];
     for (const v of e.vertices) {
-      if (v.faceA !== undefined) faces.push([v.faceA, v.faceB, v.faceC]);
+      if (v.faceA !== undefined) {
+        faces.push([v.faceA, v.faceB, v.faceC]);
+        // El cuarto índice es opcional; los índices negativos ocultan aristas.
+        if (v.faceD && Math.abs(v.faceD) !== Math.abs(v.faceC)) {
+          faces.push([v.faceA, v.faceC, v.faceD]);
+        }
+      }
       else corners.push([v.x, v.y, v.z]);
     }
 

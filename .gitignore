@@ -3,3 +3,4 @@ build
 cosas
 .vercel
 .claude/settings.local.json
+.env*
