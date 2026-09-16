@@ -56,8 +56,10 @@ function Gear({ cx, cy, paused }) {
   );
 }
 
-function ClientsBelt({ accent, steel, text }) {
-  const bg = "#07060e";
+function ClientsBelt({ accent, steel, text, bg, mode }) {
+  const modalBg = mode === "light" ? "#faf9f6" : "#0d0c14";
+  const headingColor = mode === "light" ? "#1a1a1a" : "#f5f5f5";
+  const bodyDim = mode === "light" ? "rgba(0,0,0,0.65)" : "rgba(255,255,255,0.65)";
   const [selected, setSelected] = React.useState(null);
   const [offset,   setOffset]   = React.useState(0);
   const pausedRef   = React.useRef(false);
@@ -216,7 +218,7 @@ function ClientsBelt({ accent, steel, text }) {
           cursor:"pointer",
         }}>
           <div onClick={e => e.stopPropagation()} style={{
-            background:"#0d0c14", border:`1px solid ${selected.color}66`,
+            background:modalBg, border:`1px solid ${selected.color}66`,
             padding:"36px 40px", maxWidth:"420px", width:"90%",
             position:"relative", cursor:"default",
           }}>
@@ -247,9 +249,9 @@ function ClientsBelt({ accent, steel, text }) {
               color:selected.color, marginBottom:"20px",
             }}>{selected.letter}</div>
             <div style={{ fontFamily:"'Courier New', monospace", fontSize:"10px", letterSpacing:"0.2em", color:selected.color, marginBottom:"6px", textTransform:"uppercase" }}>Cliente</div>
-            <h2 style={{ fontFamily:"Georgia, serif", fontSize:"28px", fontWeight:"normal", color:"#f5f5f5", margin:"0 0 16px", letterSpacing:"-0.02em" }}>{selected.name}</h2>
+            <h2 style={{ fontFamily:"Georgia, serif", fontSize:"28px", fontWeight:"normal", color:headingColor, margin:"0 0 16px", letterSpacing:"-0.02em" }}>{selected.name}</h2>
             <div style={{ width:"36px", height:"1.5px", background:selected.color, marginBottom:"16px" }}/>
-            <p style={{ fontFamily:"'Courier New', monospace", fontSize:"12px", color:"rgba(255,255,255,0.65)", lineHeight:"1.8", margin:"0 0 24px", letterSpacing:"0.02em" }}>{selected.desc}</p>
+            <p style={{ fontFamily:"'Courier New', monospace", fontSize:"12px", color:bodyDim, lineHeight:"1.8", margin:"0 0 24px", letterSpacing:"0.02em" }}>{selected.desc}</p>
             <button onClick={closeModal} style={{
               background:"transparent", border:`1px solid ${selected.color}66`,
               color:selected.color, padding:"8px 20px",
@@ -434,8 +436,8 @@ const PATOLOGIAS_DATA = [
   { cliente: "La Nueva Metropol", obra: "Verificación de naves metálicas", m2: 1250, ubicacion: "Merlo", model: "metropol" },
   { cliente: "Palacio Alsina", obra: "Palacio Alsina" },
   { cliente: "FAMIQ", obra: "Verificación estructural", tipo: "Estructura reticulada", m2: 13000, ubicacion: "El Triángulo, Garín", model: "famiq-con-hormigon", modelVariants: [
-    { model: "famiq-con-hormigon", label: "Con hormigón" },
-    { model: "famiq-sin-hormigon", label: "Sin hormigón" },
+    { model: "famiq-con-hormigon", label: "Reforzada + puente grúa" },
+    { model: "famiq-sin-hormigon", label: "Estructura original" },
   ] },
 ];
 
@@ -443,8 +445,15 @@ function workSurface(item) {
   return item.superficie || (item.m2 != null ? `${item.m2} m²` : "");
 }
 
-function WorksGrid({ floor, items }) {
+function WorksGrid({ floor, items, mode }) {
   const { accent, steel, text } = floor;
+  const modalBg = mode === "light" ? "#faf9f6" : "#0d0c14";
+  const headingColor = mode === "light" ? "#1a1a1a" : "#f5f5f5";
+  const bodyStrong = mode === "light" ? "rgba(0,0,0,0.85)" : "rgba(255,255,255,0.85)";
+  // En claro el fondo estructural del piso es oscuro y contrasta demasiado
+  // detrás de fichas casi transparentes; en oscuro el patrón original queda igual.
+  const cardBg      = mode === "light" ? mix(accent, floor.bg, 0.92) : `${accent}0a`;
+  const cardBgHover  = mode === "light" ? mix(accent, floor.bg, 0.82) : `${accent}18`;
   const [selected, setSelected] = useState(null);
 
   return (
@@ -465,12 +474,12 @@ function WorksGrid({ floor, items }) {
         {items.map((it, i) => (
           <div key={i} onClick={() => setSelected(it)} style={{
             position:"relative", cursor:"pointer", padding:"20px 16px",
-            border:`1px solid ${accent}33`, background:`${accent}0a`,
+            border:`1px solid ${accent}33`, background:cardBg,
             transition:"all 0.25s", minHeight:"150px",
             display:"flex", flexDirection:"column", justifyContent:"space-between",
           }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.background = `${accent}18`; e.currentTarget.style.transform = "translateY(-3px)"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = `${accent}33`; e.currentTarget.style.background = `${accent}0a`; e.currentTarget.style.transform = "translateY(0)"; }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.background = cardBgHover; e.currentTarget.style.transform = "translateY(-3px)"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = `${accent}33`; e.currentTarget.style.background = cardBg; e.currentTarget.style.transform = "translateY(0)"; }}
           >
             {[[0,0],[1,0],[0,1],[1,1]].map(([r,b],ci) => (
               <div key={ci} style={{
@@ -513,7 +522,7 @@ function WorksGrid({ floor, items }) {
           cursor:"pointer",
         }}>
           <div onClick={e => e.stopPropagation()} onWheel={e => e.stopPropagation()} style={{
-            background:"#0d0c14", border:`1px solid ${accent}66`,
+            background:modalBg, border:`1px solid ${accent}66`,
             padding:"40px 44px", maxWidth: selected.model ? "840px" : "460px", width:"90%",
             position:"relative", cursor:"default",
           }}>
@@ -537,7 +546,7 @@ function WorksGrid({ floor, items }) {
               lineHeight:1, cursor:"pointer",
             }}>×</button>
             <div style={{ fontFamily:"'Courier New', monospace", fontSize:"12px", letterSpacing:"0.2em", color:accent, marginBottom:"8px", textTransform:"uppercase" }}>Ficha técnica</div>
-            <h2 style={{ fontFamily:"Georgia, serif", fontSize:"32px", fontWeight:"normal", color:"#f5f5f5", margin:"0 0 22px", letterSpacing:"-0.02em" }}>{selected.obra}</h2>
+            <h2 style={{ fontFamily:"Georgia, serif", fontSize:"32px", fontWeight:"normal", color:headingColor, margin:"0 0 22px", letterSpacing:"-0.02em" }}>{selected.obra}</h2>
             <div style={{ width:"36px", height:"1.5px", background:accent, marginBottom:"22px" }}/>
 
             <div style={{ display:"flex", gap:"32px", flexDirection: selected.model ? "row" : "column", flexWrap:"wrap" }}>
@@ -566,7 +575,7 @@ function WorksGrid({ floor, items }) {
                 ].filter(([, value]) => value).map(([label, value]) => (
                   <div key={label} style={{ display:"flex", justifyContent:"space-between", gap:"20px", borderBottom:`1px solid ${accent}22`, paddingBottom:"12px" }}>
                     <span style={{ fontFamily:"'Courier New', monospace", fontSize:"12px", letterSpacing:"0.14em", color:accent, opacity:0.9, textTransform:"uppercase", flexShrink:0 }}>{label}</span>
-                    <span style={{ fontFamily:"'Courier New', monospace", fontSize:"15px", color:"rgba(255,255,255,0.85)", textAlign:"right" }}>{value}</span>
+                    <span style={{ fontFamily:"'Courier New', monospace", fontSize:"15px", color:bodyStrong, textAlign:"right" }}>{value}</span>
                   </div>
                 ))}
               </div>
@@ -590,6 +599,20 @@ const FLOOR_HEIGHT = 220;
 const ANIM_MS = 850;
 const WIDE_FLOORS = new Set([1, 2, 3, 4, 6]); // Viviendas, Edificios, Naves, Patologías, Clientes
 
+// ─── Utilidades de color: derivan la paleta clara de cada piso a partir de
+// su acento, mezclando hacia blanco/negro en vez de codear ~30 colores a mano.
+function hexToRgb(hex) {
+  const h = hex.replace("#", "");
+  const n = parseInt(h.length === 3 ? h.split("").map(c => c + c).join("") : h, 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+function mix(hex, target, t) {
+  const [r1, g1, b1] = hexToRgb(hex);
+  const [r2, g2, b2] = hexToRgb(target);
+  const round = v => Math.round(v).toString(16).padStart(2, "0");
+  return `#${round(r1 + (r2 - r1) * t)}${round(g1 + (g2 - g1) * t)}${round(b1 + (b2 - b1) * t)}`;
+}
+
 const floors = [
   { number: 8, label: "ÁTICO",   title: "Visión",                   subtitle: "Donde todo comienza",              description: "Cada gran proyecto nace de una idea en las alturas. Diseñamos el futuro desde la perspectiva más amplia.", accent: "#c8a96e", bg: "#0c0a06", text: "#f5edd8", steel: "#6a5a3a" },
   { number: 7, label: "PISO 7",  title: "Viviendas",                subtitle: "Diseño y cálculo habitacional",    description: "Calculamos y proyectamos estructuras para viviendas unifamiliares y multifamiliares. Desde la fundación hasta la cubierta, cada detalle importa.", accent: "#b87a5a", bg: "#100806", text: "#f5e0d8", steel: "#6a3a2a" },
@@ -601,10 +624,27 @@ const floors = [
   { number: 1, label: "P. BAJA", title: "Contacto",                 subtitle: "Tu proyecto empieza aquí",        description: "Estudio de ingeniería con más de 20 años de experiencia. Contanos tu desafío y lo convertimos en estructura.", accent: "#c0c0c0", bg: "#080808", text: "#f5f5f5", steel: "#5a5a5a" },
 ];
 
-const CS  = "#7a8a8a";
-const CD  = "#4a5858";
-const CR  = "#9aaaaa";
-const CA  = "#b0c4c4";
+// Piso a piso, para modo claro: mismo acento pero mezclado hacia blanco/negro
+// (fondo tipo papel, texto casi negro, acento con más contraste sobre blanco).
+const floorsLight = floors.map(f => ({
+  ...f,
+  bg: mix(f.accent, "#ffffff", 0.93),
+  text: mix(f.accent, "#000000", 0.85),
+  steel: mix(f.accent, "#000000", 0.45),
+  accent: mix(f.accent, "#000000", 0.35),
+}));
+
+const STEEL_DARK  = { CS: "#7a8a8a", CD: "#4a5858", CR: "#9aaaaa", CA: "#b0c4c4" };
+const STEEL_LIGHT = {
+  CS: mix(STEEL_DARK.CS, "#000000", 0.35),
+  CD: mix(STEEL_DARK.CD, "#000000", 0.15),
+  CR: mix(STEEL_DARK.CR, "#000000", 0.45),
+  CA: mix(STEEL_DARK.CA, "#000000", 0.55),
+};
+const CS  = STEEL_DARK.CS;
+const CD  = STEEL_DARK.CD;
+const CR  = STEEL_DARK.CR;
+const CA  = STEEL_DARK.CA;
 
 const VB_W = 380;
 const VB_H = 700;
@@ -620,10 +660,14 @@ const CW_X = 160;
 
 function shaftY(idx) { return SHAFT_TOP + idx * FLOOR_H_S; }
 
-function ElevatorShaft({ current, introCurrent, doorsVisible, arrived, go, accent }) {
+function ElevatorShaft({ current, introCurrent, doorsVisible, arrived, go, accent, mode }) {
   const shaftIdx = doorsVisible ? introCurrent : current;
   const cabinY = shaftY(shaftIdx) - CAB_H / 2;
   const cwY    = SHAFT_H - (cabinY - SHAFT_TOP) + SHAFT_TOP;
+  const { CS, CD, CR, CA } = mode === "light" ? STEEL_LIGHT : STEEL_DARK;
+  const inactiveLabel = mode === "light" ? "#0a0a0a" : "#ffffff";
+  const inactiveLabelOpacity = mode === "light" ? 0.75 : 0.45;
+  const inactiveNumberOpacity = mode === "light" ? 0.65 : 0.35;
 
   return (
     <svg viewBox={`0 0 ${VB_W} ${VB_H}`} style={{ width: "100%", height: "100%", display: "block" }}
@@ -678,14 +722,14 @@ function ElevatorShaft({ current, introCurrent, doorsVisible, arrived, go, accen
             <circle cx={CAB_X - 16} cy={y} r="2.5" fill={CR} fillOpacity={i === arrived ? 0.85 : 0.3} />
             <circle cx={CAB_X + CAB_W + 16} cy={y} r="2.5" fill={CR} fillOpacity={i === arrived ? 0.85 : 0.3} />
             <text x="13" y={y + 4} fontFamily="'Courier New', monospace" fontSize="8"
-              fill={i === arrived ? CA : CS} fillOpacity={i === arrived ? 1 : 0.35}
+              fill={i === arrived ? CA : CS} fillOpacity={i === arrived ? 1 : inactiveNumberOpacity}
               letterSpacing="0.5" textAnchor="middle">
               {String(f.number).padStart(2, "0")}
             </text>
             {i === arrived && <line x1="185" y1={y} x2="198" y2={y} stroke={accent} strokeWidth="1.5" strokeOpacity="0.9" />}
             <text x="202" y={f.lines ? y - 3 : y + 5} fontFamily="'Courier New', monospace" fontSize="14"
-              fill={i === arrived ? accent : "#ffffff"}
-              fillOpacity={i === arrived ? 1 : 0.45}
+              fill={i === arrived ? accent : inactiveLabel}
+              fillOpacity={i === arrived ? 1 : inactiveLabelOpacity}
               filter={i === arrived ? "url(#neon)" : undefined}
               letterSpacing="0.8" textAnchor="start">
               {f.lines
@@ -732,7 +776,7 @@ function ElevatorShaft({ current, introCurrent, doorsVisible, arrived, go, accen
   );
 }
 
-function SteelWorld({ offsetY, steel }) {
+function SteelWorld({ offsetY, steel, floorsData }) {
   const sections = TOTAL + 3;
   const W = 1400;
 
@@ -768,7 +812,7 @@ function SteelWorld({ offsetY, steel }) {
         {Array.from({ length: sections }, (_, i) => {
           const y  = i * FLOOR_HEIGHT;
           const fi = Math.min(i, TOTAL - 1);
-          const fa = floors[fi].accent;
+          const fa = floorsData[fi].accent;
           return (
             <g key={i}>
               <rect x="48" y={y-10} width="1299" height="5"  fill={steel} fillOpacity="0.28" />
@@ -830,7 +874,8 @@ function SteelWorld({ offsetY, steel }) {
   );
 }
 
-function CabinFrame() {
+function CabinFrame({ mode }) {
+  const { CS, CD, CR, CA } = mode === "light" ? STEEL_LIGHT : STEEL_DARK;
   return (
     <svg style={{ position:"fixed", left:"310px", right:0, top:0, bottom:0, width:"calc(100% - 310px)", height:"100%", pointerEvents:"none", zIndex:20 }}
       viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
@@ -906,9 +951,17 @@ export default function App() {
   const [doorsVisible, setDoorsVisible] = useState(true);
   const [arrived,      setArrived]      = useState(0);
   const [introCurrent, setIntroCurrent] = useState(TOTAL - 1);
+  const [mode, setMode] = useState(() => {
+    try { return localStorage.getItem("ioca-theme") === "light" ? "light" : "dark"; }
+    catch { return "dark"; }
+  });
   const lastScroll = useRef(0);
   const touchY     = useRef(null);
   const animating  = useRef(false);
+
+  useEffect(() => {
+    try { localStorage.setItem("ioca-theme", mode); } catch { /* almacenamiento no disponible */ }
+  }, [mode]);
 
   const go = useCallback((next) => {
     if (animating.current || next < 0 || next >= TOTAL) return;
@@ -952,8 +1005,10 @@ export default function App() {
     return () => { window.removeEventListener("wheel", onWheel); window.removeEventListener("keydown", onKey); };
   }, [current, go]);
 
-  const floor     = floors[display];
-  const worldOff  = -current * FLOOR_HEIGHT + 280;
+  const floorsData = mode === "light" ? floorsLight : floors;
+  const floor      = floorsData[display];
+  const worldOff   = -current * FLOOR_HEIGHT + 280;
+  const { CS: sidebarCS } = mode === "light" ? STEEL_LIGHT : STEEL_DARK;
 
   return (
     <div
@@ -971,7 +1026,7 @@ export default function App() {
       }}
     >
       <div style={{ position: "fixed", inset: 0, zIndex: 0, overflow: "hidden" }}>
-        <SteelWorld offsetY={worldOff} steel={floor.steel} />
+        <SteelWorld offsetY={worldOff} steel={floor.steel} floorsData={floorsData} />
       </div>
 
       <div style={{
@@ -985,12 +1040,12 @@ export default function App() {
         width: "310px", zIndex: 35,
         display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
         padding: "16px 8px",
-        borderRight: `1px solid ${CS}22`,
+        borderRight: `1px solid ${sidebarCS}22`,
         background: `${floor.bg}cc`,
         transition: "background 0.9s ease",
       }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "12px" }}>
-          <img src="/logo-final.png" alt="IOCA"
+          <img src={mode === "light" ? "/logo-blanco.png" : "/logo-final.png"} alt="IOCA"
             style={{ width: "200px", objectFit: "contain", marginTop: "12px", marginBottom: "8px", opacity: 0.9 }} />
           <div style={{ display: "flex", gap: "18px", alignItems: "center" }}>
             <a href="https://instagram.com" target="_blank" rel="noreferrer"
@@ -1015,7 +1070,20 @@ export default function App() {
           </div>
         </div>
         <div style={{ width: "290px", flex: 1, minHeight: 0 }}>
-          <ElevatorShaft current={current} introCurrent={introCurrent} doorsVisible={doorsVisible} arrived={arrived} go={go} accent={floor.accent} />
+          <ElevatorShaft current={current} introCurrent={introCurrent} doorsVisible={doorsVisible} arrived={arrived} go={go} accent={floor.accent} mode={mode} />
+        </div>
+        <div style={{ marginTop: "12px", width: "150px", display: "flex", gap: "6px" }}>
+          {[["dark", "OSCURO"], ["light", "CLARO"]].map(([val, label]) => (
+            <button key={val} onClick={() => setMode(val)} style={{
+              flex: 1, textAlign: "center",
+              background: mode === val ? `${floor.accent}22` : "transparent",
+              border: `1px solid ${mode === val ? floor.accent : sidebarCS + "44"}`,
+              color: mode === val ? floor.accent : (mode === "light" ? "#1a1a1a" : "#e5e5e5"),
+              padding: "4px 6px",
+              fontFamily: "'Courier New', monospace", fontSize: "9px", letterSpacing: "0.04em",
+              cursor: "pointer", transition: "all 0.2s",
+            }}>{label}</button>
+          ))}
         </div>
       </div>
 
@@ -1106,15 +1174,15 @@ export default function App() {
           }}
         >
           {display === 1 ? (
-            <WorksGrid floor={floor} items={VIVIENDAS_DATA} />
+            <WorksGrid floor={floor} items={VIVIENDAS_DATA} mode={mode} />
           ) : display === 2 ? (
-            <WorksGrid floor={floor} items={EDIFICIOS_DATA} />
+            <WorksGrid floor={floor} items={EDIFICIOS_DATA} mode={mode} />
           ) : display === 3 ? (
-            <WorksGrid floor={floor} items={NAVES_DATA} />
+            <WorksGrid floor={floor} items={NAVES_DATA} mode={mode} />
           ) : display === 4 ? (
-            <WorksGrid floor={floor} items={PATOLOGIAS_DATA} />
+            <WorksGrid floor={floor} items={PATOLOGIAS_DATA} mode={mode} />
           ) : display === 6 ? (
-            <ClientsBelt accent={floor.accent} steel={floor.steel} text={floor.text} />
+            <ClientsBelt accent={floor.accent} steel={floor.steel} text={floor.text} bg={floor.bg} mode={mode} />
           ) : (
             <>
               <div style={{

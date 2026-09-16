@@ -25,14 +25,15 @@ test("switches between both FAMIQ models and resets when reopened", () => {
     { model:"famiq-sin-hormigon", label:"Sin hormigón" },
   ] };
   act(() => root.render(<ProjectModelViewer {...props} />));
+  const buttons = () => container.querySelectorAll("button");
   expect(container.querySelector("[data-model]").dataset.model).toBe("famiq-con-hormigon");
-  expect(container.querySelector("button").textContent).toBe("Ver sin hormigón");
-  act(() => container.querySelector("button").click());
+  expect(buttons()).toHaveLength(2);
+  expect(buttons()[0].textContent).toBe("Con hormigón");
+  expect(buttons()[1].textContent).toBe("Sin hormigón");
+  act(() => buttons()[1].click());
   expect(container.querySelector("[data-model]").dataset.model).toBe("famiq-sin-hormigon");
-  expect(container.querySelector("button").textContent).toBe("Ver con hormigón");
-  act(() => container.querySelector("button").click());
+  act(() => buttons()[0].click());
   expect(container.querySelector("[data-model]").dataset.model).toBe("famiq-con-hormigon");
-  act(() => container.querySelector("button").click());
   act(() => root.render(null));
   act(() => root.render(<ProjectModelViewer {...props} />));
   expect(container.querySelector("[data-model]").dataset.model).toBe("famiq-con-hormigon");
