@@ -157,19 +157,22 @@ export default function ModelViewer({ slug, accent }) {
     }
     load();
 
+    // Sigue el tamaño del contenedor (no sólo de la ventana), p. ej. al ampliar a pantalla completa
     const onResize = () => {
       const w = mount.clientWidth, h = mount.clientHeight;
+      if (!w || !h) return;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
     };
-    window.addEventListener("resize", onResize);
+    const resizeObserver = new ResizeObserver(onResize);
+    resizeObserver.observe(mount);
 
     return () => {
       disposed = true;
       zoomRef.current = null;
       cancelAnimationFrame(rafId);
-      window.removeEventListener("resize", onResize);
+      resizeObserver.disconnect();
       el.removeEventListener("pointerdown", onDown);
       el.removeEventListener("pointermove", onMove);
       el.removeEventListener("pointerup", onUp);

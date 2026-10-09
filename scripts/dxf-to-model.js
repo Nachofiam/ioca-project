@@ -11,8 +11,14 @@ const DxfParser = require("dxf-parser");
 
 const CATEGORY_ORDER = ["PILAR", "VIGA", "MURO", "CIMENTACION", "LOSA", "OTRO"];
 
+// Nombres de capa alternativos que usan algunos planos
+const LAYER_ALIASES = [["COLUMNA", "PILAR"], ["FUNDACION", "CIMENTACION"]];
+
 function classify(layer) {
   if (!layer) return "OTRO";
+  for (const [alias, cat] of LAYER_ALIASES) {
+    if (layer.includes(alias)) return cat;
+  }
   for (const cat of CATEGORY_ORDER) {
     if (cat !== "OTRO" && layer.includes(cat)) return cat;
   }

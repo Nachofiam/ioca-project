@@ -3,18 +3,41 @@ import ProjectModelViewer from "./ProjectModelViewer";
 
 
 // ─── CLIENTES: cinta transportadora industrial ───────────────────────────────
+// Fuente: Contenido WEB - Version C.xlsx, Hoja1, columna K (filas 27–48).
+// `short` es el nombre que entra en la caja de la cinta; `name` se ve completo al abrirla.
+const CLIENT_COLORS = ["#4a90d9", "#c8a96e", "#7ab0d4", "#b87a5a", "#9a9a7a", "#8a7ac8", "#7ab87a", "#c0c0c0", "#d4a0a0", "#a0c4d4"];
 const CLIENTS = [
-  { name: "YPF",              color: "#4a90d9", letter: "Y",  desc: "Proyecto de ingeniería estructural para plantas de extracción en la cuenca neuquina." },
-  { name: "IMPSA",            color: "#c8a96e", letter: "I",  desc: "Cálculo y supervisión de obras civiles para parques de generación eólica." },
-  { name: "Techint",          color: "#7ab0d4", letter: "T",  desc: "Estructuras metálicas y fundaciones para complejos industriales en Bahía Blanca." },
-  { name: "IECSA",            color: "#b87a5a", letter: "E",  desc: "Dirección técnica en obras de infraestructura vial y puentes de hormigón." },
-  { name: "Roggio",           color: "#9a9a7a", letter: "R",  desc: "Auditoría estructural y certificación de obras en el área metropolitana." },
-  { name: "Electroingenieria",color: "#8a7ac8", letter: "EL", desc: "Ingeniería de detalle para subestaciones eléctricas de alta tensión." },
-  { name: "Loma Negra",       color: "#7ab87a", letter: "LN", desc: "Estudio de suelos y diseño de fundaciones para plantas cementeras." },
-  { name: "Sacde",            color: "#c0c0c0", letter: "S",  desc: "Proyecto ejecutivo de estructuras para obras hidráulicas en el NOA." },
-  { name: "Ghella",           color: "#d4a0a0", letter: "G",  desc: "Soporte técnico en tunelería y obras subterráneas en Buenos Aires." },
-  { name: "IATEC",            color: "#a0c4d4", letter: "IA", desc: "Consultoría en instalaciones industriales y montaje electromecánico." },
-];
+  { name: "AXION" },
+  { name: "YPF" },
+  { name: "La Nueva Metropol", short: "Nueva Metropol" },
+  { name: "AUSOL" },
+  { name: "Autopistas del Oeste", short: "Aut. del Oeste" },
+  { name: "AUBASA" },
+  { name: "AUSA" },
+  { name: "Administración General de Puertos", short: "AGP" },
+  { name: "OSDE" },
+  { name: "PREAR" },
+  { name: "Premoldeados de Argentina", short: "Premoldeados Arg." },
+  { name: "BTU" },
+  { name: "Gobierno de la Ciudad de Buenos Aires", short: "GCBA" },
+  { name: "Cocordano" },
+  { name: "World Bank" },
+  { name: "ASOCIART" },
+  { name: "FATE" },
+  { name: "Maxiconsumo" },
+  { name: "Cinemark" },
+  { name: "Hoyts" },
+  { name: "Instituto de la Vivienda de la Ciudad", short: "IVC" },
+  { name: "Armada Argentina", short: "Armada Arg." },
+].map((c, i) => {
+  const short = c.short || c.name;
+  // Iniciales: el nombre entero si es corto, si no las iniciales de las palabras con mayúscula (o las 2 primeras letras)
+  const words = short.replace(/\./g, "").split(/\s+/).filter(w => w[0] === w[0].toUpperCase());
+  const letter = short.length <= 4 ? short.toUpperCase()
+    : words.length > 1 ? words.slice(0, 2).map(w => w[0]).join("").toUpperCase()
+    : short.slice(0, 2).toUpperCase();
+  return { ...c, short, letter, color: CLIENT_COLORS[i % CLIENT_COLORS.length] };
+});
 
 const GR  = 52; const BT = 12;
 const CW = 130; const CH = 110; const CGAP = 22;
@@ -53,6 +76,16 @@ function useIsMobile() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
   return mobile;
+}
+
+// Cierra un modal con Esc (la vista ampliada del visor lo intercepta antes y se cierra primero)
+function useEscape(active, onClose) {
+  useEffect(() => {
+    if (!active) return;
+    const onKey = e => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [active, onClose]);
 }
 
 // Evita que los toques dentro de un modal cambien de piso
@@ -110,10 +143,11 @@ function ClientsBelt({ accent, steel, text, bg, mode, mobile }) {
   const handleCardLeave = () => { if (!selected) pausedRef.current = false; };
 
   // Resume belt when modal closes
-  const closeModal = () => {
+  const closeModal = React.useCallback(() => {
     setSelected(null);
     pausedRef.current = false;
-  };
+  }, []);
+  useEscape(!!selected, closeModal);
 
   const cards = [...CLIENTS, ...CLIENTS, ...CLIENTS];
   const paused = pausedRef.current || !!selected;
@@ -179,7 +213,7 @@ function ClientsBelt({ accent, steel, text, bg, mode, mobile }) {
                       fontFamily="'Courier New', monospace" fontSize="14" fontWeight="bold" fill={c.color}>{c.letter}</text>
                     <text x={x+CW/2} y={y+CH*0.82} textAnchor="middle"
                       fontFamily="'Courier New', monospace" fontSize="9" letterSpacing="1"
-                      fill={c.color} fillOpacity="0.7">{c.name.toUpperCase()}</text>
+                      fill={c.color} fillOpacity="0.7">{c.short.toUpperCase()}</text>
                   </g>
                 );
               })}
@@ -275,7 +309,7 @@ function ClientsBelt({ accent, steel, text, bg, mode, mobile }) {
             <div style={{ fontFamily:"'Courier New', monospace", fontSize:"10px", letterSpacing:"0.2em", color:selected.color, marginBottom:"6px", textTransform:"uppercase" }}>Cliente</div>
             <h2 style={{ fontFamily:"Georgia, serif", fontSize:"28px", fontWeight:"normal", color:headingColor, margin:"0 0 16px", letterSpacing:"-0.02em" }}>{selected.name}</h2>
             <div style={{ width:"36px", height:"1.5px", background:selected.color, marginBottom:"16px" }}/>
-            <p style={{ fontFamily:"'Courier New', monospace", fontSize:"12px", color:bodyDim, lineHeight:"1.8", margin:"0 0 24px", letterSpacing:"0.02em" }}>{selected.desc}</p>
+            {selected.desc && <p style={{ fontFamily:"'Courier New', monospace", fontSize:"12px", color:bodyDim, lineHeight:"1.8", margin:"0 0 24px", letterSpacing:"0.02em" }}>{selected.desc}</p>}
             <button onClick={closeModal} style={{
               background:"transparent", border:`1px solid ${selected.color}66`,
               color:selected.color, padding:"8px 20px",
@@ -432,7 +466,7 @@ const EDIFICIOS_DATA = [
   { cliente: "TdAs",         obra: "Aristóbulo",           m2: 2600, ubicacion: "Lanús", model: "aristobulo" },
   { cliente: "Acosta",       obra: "Bogotá",                m2: 2400, ubicacion: "Gral. Pacheco, Tigre", model: "bogota" },
   { cliente: "Ganzabal",     obra: "Locales Buena Vista",   m2: 1300, ubicacion: "Victoria, San Fernando", model: "locales-buena-vista" },
-  { cliente: "TdAs",         obra: "Sixto 195",             m2: 5400, ubicacion: "Las Lomitas, Lomas de Zamora" },
+  { cliente: "TdAs",         obra: "Sixto 195",             m2: 5400, ubicacion: "Las Lomitas, Lomas de Zamora", model: "sixto-195" },
   { cliente: "Cubero-Rubio", obra: "AR2235",                m2: 5800, ubicacion: "Palermo, CABA", model: "ar2235" },
 ];
 
@@ -445,8 +479,9 @@ const VIVIENDAS_DATA = [
   { cliente: "TdAs",            obra: "Hormigón armado",                               m2: 355, ubicacion: "El Salvaje, Mar de las Pampas", model: "el-salvaje" },
 ];
 
-// Fuente: Contenido WEB - Version B.xlsx, Hoja1, filas 20–24.
+// Fuente: Contenido WEB - Version C.xlsx, Hoja1, filas 19–24.
 const NAVES_DATA = [
+  { cliente: "BROTHERS", obra: "Nave Aldue", tipo: "Estructura metálica alma llena", m2: 1500, ubicacion: "Florencio Varela", model: "brothers" },
   { cliente: "GAMMA Sudamericana", obra: "Estación de servicio AXION", tipo: "Estructura reticulada / Shop de hormigón", m2: "950 + 700", ubicacion: "San Vicente", model: "san-vicente" },
   { cliente: "LUMMA", obra: "Cine 3D", tipo: "Estructura metálica", superficie: "Sala: 500 m² + Pantalla: 350 m²", ubicacion: "Eco Parque, CABA", model: "lumma" },
   { cliente: "Constructora Lomas", obra: "Plásticos SP", tipo: "Alma llena / Oficinas de hormigón", m2: "2800 + 150", ubicacion: "Burzaco", model: "plasticos-sp" },
@@ -454,19 +489,24 @@ const NAVES_DATA = [
   { cliente: "BTU", obra: "Naves Containers", tipo: "Naves contenedores / Reticuladas", m2: 1200, ubicacion: "Ezeiza", model: "btu" },
 ];
 
-// Fuente: Contenido WEB - Version B.xlsx, Hoja1, filas 27–30.
+// Fuente: Contenido WEB - Version C.xlsx, Hoja1, filas 27–32.
 const PATOLOGIAS_DATA = [
-  { cliente: "AUSOL", obra: "Pasarelas / Refugios", ubicacion: "Vicente López", model: "ausol" },
-  { cliente: "La Nueva Metropol", obra: "Verificación de naves metálicas", m2: 1250, ubicacion: "Merlo", model: "metropol" },
-  { cliente: "Palacio Alsina", obra: "Palacio Alsina" },
-  { cliente: "FAMIQ", obra: "Verificación estructural", tipo: "Estructura reticulada", m2: 13000, ubicacion: "El Triángulo, Garín", model: "famiq-con-hormigon", modelVariants: [
+  { cliente: "AUSOL", obra: "Pasarelas / Refugios", trabajo: "Verificación estructural", cantidad: "Más de 30", ubicacion: "Vicente López", model: "ausol" },
+  { cliente: "La Nueva Metropol", obra: "Naves reticuladas", trabajo: "Verificación de galpones existentes, adaptación a reglamento", m2: 1250, ubicacion: "Merlo", model: "metropol" },
+  { cliente: "Palacio Alsina", obra: "Estructura metálica embebida en hormigón", trabajo: "Verificación estructural de edificio de eventos de 6 plantas", m2: 4700, ubicacion: "CABA", model: "palacio-alsina",
+    images: ["/images/obras/palacio-alsina-1.jpg", "/images/obras/palacio-alsina-2.png"] },
+  { cliente: "FAMIQ", obra: "Estructura reticulada", trabajo: "Diseño de estructura soporte de puente grúa para refuerzo y estabilización de estructura metálica", m2: 13000, ubicacion: "El Triángulo, Garín", model: "famiq-con-hormigon", modelVariants: [
     { model: "famiq-con-hormigon", label: "Reforzada + puente grúa" },
     { model: "famiq-sin-hormigon", label: "Estructura original" },
   ] },
+  { cliente: "FATE", obra: "Estructura de hormigón", trabajo: "Análisis de estructura con armadura corroída, diagnóstico y solución", cantidad: "Viga de 20 m", ubicacion: "San Fernando",
+    images: ["/images/obras/fate-1.png", "/images/obras/fate-2.png", "/images/obras/fate-3.png"] },
+  { cliente: "ARMADA", obra: "Monoblock 20", trabajo: "Análisis de resistencia de columnas de PB", m2: 4000, ubicacion: "Villa Celina", model: "armada",
+    images: ["/images/obras/armada-1.jpg", "/images/obras/armada-2.jpg"] },
 ];
 
 function workSurface(item) {
-  return item.superficie || (item.m2 != null ? `${item.m2} m²` : "");
+  return item.superficie || item.cantidad || (item.m2 != null ? `${item.m2} m²` : "");
 }
 
 function WorksGrid({ floor, items, mode, mobile }) {
@@ -479,6 +519,8 @@ function WorksGrid({ floor, items, mode, mobile }) {
   const cardBg      = mode === "light" ? mix(accent, floor.bg, 0.92) : `${accent}0a`;
   const cardBgHover  = mode === "light" ? mix(accent, floor.bg, 0.82) : `${accent}18`;
   const [selected, setSelected] = useState(null);
+  const closeSelected = useCallback(() => setSelected(null), []);
+  useEscape(!!selected, closeSelected);
 
   return (
     <div style={{ width:"100%", maxWidth:"920px", display:"flex", flexDirection:"column", gap: mobile ? "20px" : "28px" }}>
@@ -547,7 +589,7 @@ function WorksGrid({ floor, items, mode, mobile }) {
         }}>
           <div onClick={e => e.stopPropagation()} onWheel={e => e.stopPropagation()} style={{
             background:modalBg, border:`1px solid ${accent}66`,
-            padding: mobile ? "36px 18px 22px" : "40px 44px", maxWidth: selected.model ? "840px" : "460px",
+            padding: mobile ? "36px 18px 22px" : "40px 44px", maxWidth: (selected.model || selected.images) ? "840px" : "460px",
             width: mobile ? "calc(100% - 24px)" : "90%", maxHeight: mobile ? "calc(100dvh - 24px)" : "none",
             overflowY: mobile ? "auto" : "visible", boxSizing:"border-box",
             position:"relative", cursor:"default",
@@ -575,19 +617,16 @@ function WorksGrid({ floor, items, mode, mobile }) {
             <h2 style={{ fontFamily:"Georgia, serif", fontSize: mobile ? "24px" : "32px", fontWeight:"normal", color:headingColor, margin: mobile ? "0 0 16px" : "0 0 22px", letterSpacing:"-0.02em", paddingRight: mobile ? "30px" : 0 }}>{selected.obra}</h2>
             <div style={{ width:"36px", height:"1.5px", background:accent, marginBottom:"22px" }}/>
 
-            <div style={{ display:"flex", gap: mobile ? "20px" : "32px", flexDirection: selected.model && !mobile ? "row" : "column", flexWrap:"wrap" }}>
-              {selected.model && (
+            <div style={{ display:"flex", gap: mobile ? "20px" : "32px", flexDirection: (selected.model || selected.images) && !mobile ? "row" : "column", flexWrap:"wrap" }}>
+              {(selected.model || selected.images) && (
                 <div style={{
                   flex: mobile ? "0 0 auto" : "1 1 380px", height: mobile ? "280px" : "360px",
                   border:`1px solid ${accent}33`, background:"linear-gradient(180deg, #eef1f2 0%, #dde2e5 100%)",
                   position:"relative", overflow:"hidden",
                 }}>
-                  <ProjectModelViewer key={selected.model} model={selected.model} variants={selected.modelVariants} accent={accent} />
-                  <div style={{
-                    position:"absolute", bottom:"8px", left:"10px", pointerEvents:"none",
-                    fontFamily:"'Courier New', monospace", fontSize:"9px", letterSpacing:"0.1em",
-                    color:"#3a444d", opacity:0.7, background:"rgba(255,255,255,0.6)", padding:"3px 8px",
-                  }}>{mobile ? "ARRASTRAR PARA ROTAR" : "🖱️ ARRASTRAR PARA ROTAR · RUEDA PARA ZOOM"}</div>
+                  <ProjectModelViewer key={selected.obra} model={selected.model} variants={selected.modelVariants}
+                    images={selected.images} accent={accent}
+                    hint={mobile ? "ARRASTRAR PARA ROTAR" : "🖱️ ARRASTRAR PARA ROTAR · RUEDA PARA ZOOM"} />
                 </div>
               )}
 
@@ -596,11 +635,12 @@ function WorksGrid({ floor, items, mode, mobile }) {
                   ["Cliente", selected.cliente],
                   ["Obra", selected.obra],
                   ...(selected.tipo ? [["Tipo", selected.tipo]] : []),
-                  ["Superficie", workSurface(selected)],
+                  ...(selected.trabajo ? [["Trabajo realizado", selected.trabajo]] : []),
+                  [selected.cantidad ? "Cantidad" : "Superficie", workSurface(selected)],
                   ["Ubicación", selected.ubicacion],
                 ].filter(([, value]) => value).map(([label, value]) => (
                   <div key={label} style={{ display:"flex", justifyContent:"space-between", gap:"20px", borderBottom:`1px solid ${accent}22`, paddingBottom:"12px" }}>
-                    <span style={{ fontFamily:"'Courier New', monospace", fontSize: mobile ? "10px" : "12px", letterSpacing:"0.14em", color:accent, opacity:0.9, textTransform:"uppercase", flexShrink:0 }}>{label}</span>
+                    <span style={{ fontFamily:"'Courier New', monospace", fontSize: mobile ? "10px" : "12px", letterSpacing:"0.14em", color:accent, opacity:0.9, textTransform:"uppercase", flexShrink:0, maxWidth: mobile ? "90px" : "110px", lineHeight:1.5 }}>{label}</span>
                     <span style={{ fontFamily:"'Courier New', monospace", fontSize: mobile ? "13px" : "15px", color:bodyStrong, textAlign:"right" }}>{value}</span>
                   </div>
                 ))}
@@ -1279,7 +1319,7 @@ export default function App() {
       <div ref={contentRef} style={mobile ? {
         position: "fixed", left: 0, right: 0, top: "60px", bottom: 0, zIndex: 30,
         display: "flex", alignItems: "flex-start", justifyContent: "center",
-        padding: "24px 18px 84px", boxSizing: "border-box",
+        padding: "24px 18px 110px", boxSizing: "border-box",
         overflowY: "auto", overflowX: "hidden", WebkitOverflowScrolling: "touch",
       } : {
         position: "fixed", left: "310px", right: 0, top: 0, bottom: 0, zIndex: 30,
@@ -1363,28 +1403,46 @@ export default function App() {
         </div>
       </div>}
 
-      <div style={mobile ? {
-        position:"fixed", right:"16px", bottom:"16px",
-        display:"flex", flexDirection:"row", gap:"0.6rem", zIndex:35, alignItems:"center",
-        padding:"6px", background:`${floor.bg}cc`, backdropFilter:"blur(4px)",
-      } : {
-        position:"fixed", right:"20px", top:"50%", transform:"translateY(-50%)",
-        display:"flex", flexDirection:"column", gap:"0.6rem", zIndex:35, alignItems:"center",
-      }}>
-        {[["▲", current-1, current===0],["▼", current+1, current===TOTAL-1]].map(([lbl,tgt,dis])=>(
-          <button key={lbl} onClick={()=>go(tgt)} disabled={dis} style={{
-            background:"transparent",
-            border:`1px solid ${dis ? floor.steel : floor.accent}`,
-            color: dis ? floor.steel : floor.accent,
-            padding: mobile ? "10px 14px" : "8px 12px", cursor: dis?"default":"pointer",
-            fontFamily:"'Courier New', monospace", fontSize:"11px",
-            opacity: dis?0.3:1, transition:"all 0.3s",
-          }}>{lbl}</button>
-        ))}
-        <span style={{ color:floor.steel, fontFamily:"'Courier New', monospace", fontSize:"10px", letterSpacing:"0.2em", writingMode: mobile ? "horizontal-tb" : "vertical-rl" }}>
-          {current+1} / {TOTAL}
-        </span>
-      </div>
+      {mobile ? (
+        // Celular: ▲ y ▼ grandes, del mismo tamaño y centrados juntos (el piso ya se ve en la barra superior)
+        <div style={{
+          position:"fixed", left:"50%", bottom:"16px", transform:"translateX(-50%)",
+          display:"flex", flexDirection:"row", gap:"12px", zIndex:35, alignItems:"center",
+          padding:"8px", background:`${floor.bg}cc`, backdropFilter:"blur(4px)",
+        }}>
+          {[["▲", current-1, current===0, false],["▼", current+1, current===TOTAL-1, true]].map(([lbl,tgt,dis,down])=>(
+            <button key={lbl} onClick={()=>go(tgt)} disabled={dis} aria-label={down ? "Bajar de piso" : "Subir de piso"} style={{
+              width:"64px", height:"64px",
+              display:"flex", alignItems:"center", justifyContent:"center", padding:0,
+              background: dis ? "transparent" : `${floor.accent}22`,
+              border:`2px solid ${dis ? floor.steel : floor.accent}`,
+              color: dis ? floor.steel : floor.accent,
+              cursor: dis?"default":"pointer",
+              fontFamily:"'Courier New', monospace", fontSize:"24px",
+              opacity: dis?0.3:1, transition:"all 0.3s",
+            }}>{lbl}</button>
+          ))}
+        </div>
+      ) : (
+        <div style={{
+          position:"fixed", right:"20px", top:"50%", transform:"translateY(-50%)",
+          display:"flex", flexDirection:"column", gap:"0.6rem", zIndex:35, alignItems:"center",
+        }}>
+          {[["▲", current-1, current===0],["▼", current+1, current===TOTAL-1]].map(([lbl,tgt,dis])=>(
+            <button key={lbl} onClick={()=>go(tgt)} disabled={dis} style={{
+              background:"transparent",
+              border:`1px solid ${dis ? floor.steel : floor.accent}`,
+              color: dis ? floor.steel : floor.accent,
+              padding:"8px 12px", cursor: dis?"default":"pointer",
+              fontFamily:"'Courier New', monospace", fontSize:"11px",
+              opacity: dis?0.3:1, transition:"all 0.3s",
+            }}>{lbl}</button>
+          ))}
+          <span style={{ color:floor.steel, fontFamily:"'Courier New', monospace", fontSize:"10px", letterSpacing:"0.2em", writingMode:"vertical-rl" }}>
+            {current+1} / {TOTAL}
+          </span>
+        </div>
+      )}
 
       <style>{`
         @keyframes enterUp   { from{opacity:0;transform:translateY(50px)} to{opacity:1;transform:translateY(0)} }
