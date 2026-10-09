@@ -16,24 +16,47 @@ const CLIENTS = [
   { name: "IATEC",            color: "#a0c4d4", letter: "IA", desc: "Consultoría en instalaciones industriales y montaje electromecánico." },
 ];
 
-const VW = 1000; const VH = 320;
 const GR  = 52; const BT = 12;
-const TX  = GR; const TXR = VW - GR;
-const VCY = VH * 0.72;
-const OT  = VCY - GR; const IT = VCY - GR + BT;
-const OB  = VCY + GR; const IB = VCY + GR - BT;
-const STRAIGHT = TXR - TX;
 const CW = 130; const CH = 110; const CGAP = 22;
 const CARD_PITCH = CW + CGAP;
 const N_CARDS = CLIENTS.length;
 const LOOP_W = N_CARDS * CARD_PITCH;
 const TW = 12; const TG = 7; const TH = 10;
 const TPITCH = TW + TG;
-const N_TEETH = Math.ceil(STRAIGHT / TPITCH) + 2;
-const VIGA_X_L = TX + GR * 0.3;
-const VIGA_X_R = TXR - GR * 0.3 - 18;
 const VIGA_W = 18;
 const REMACHES = [20, 60, 110, 160, 210, 260];
+
+// Geometría de la cinta según el ancho del viewBox (más angosto en celular → cajas más grandes)
+function beltGeometry(VW) {
+  const VH = 320;
+  const TX = GR; const TXR = VW - GR;
+  const VCY = VH * 0.72;
+  return {
+    VW, VH, TX, TXR, VCY,
+    OT: VCY - GR, IT: VCY - GR + BT,
+    OB: VCY + GR, IB: VCY + GR - BT,
+    STRAIGHT: TXR - TX,
+    N_TEETH: Math.ceil((TXR - TX) / TPITCH) + 2,
+    VIGA_X_L: TX + GR * 0.3,
+    VIGA_X_R: TXR - GR * 0.3 - 18,
+  };
+}
+
+// ─── Responsive ──────────────────────────────────────────────────────────────
+const MOBILE_BP = 768;
+function useIsMobile() {
+  const get = () => typeof window !== "undefined" && window.innerWidth < MOBILE_BP;
+  const [mobile, setMobile] = useState(get);
+  useEffect(() => {
+    const onResize = () => setMobile(get());
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  return mobile;
+}
+
+// Evita que los toques dentro de un modal cambien de piso
+const stopTouch = { onTouchStart: e => e.stopPropagation(), onTouchEnd: e => e.stopPropagation() };
 
 function Gear({ cx, cy, paused }) {
   const teeth = 16; const r = GR - BT/2; const toothH = 11;
@@ -56,7 +79,8 @@ function Gear({ cx, cy, paused }) {
   );
 }
 
-function ClientsBelt({ accent, steel, text, bg, mode }) {
+function ClientsBelt({ accent, steel, text, bg, mode, mobile }) {
+  const { VW, VH, TX, TXR, VCY, OT, IT, OB, IB, STRAIGHT, N_TEETH, VIGA_X_L, VIGA_X_R } = beltGeometry(mobile ? 460 : 1000);
   const modalBg = mode === "light" ? "#faf9f6" : "#0d0c14";
   const headingColor = mode === "light" ? "#1a1a1a" : "#f5f5f5";
   const bodyDim = mode === "light" ? "rgba(0,0,0,0.65)" : "rgba(255,255,255,0.65)";
@@ -95,7 +119,7 @@ function ClientsBelt({ accent, steel, text, bg, mode }) {
   const paused = pausedRef.current || !!selected;
 
   return (
-    <div style={{ width:"100%", display:"flex", flexDirection:"column", justifyContent:"flex-start", height:"100%", paddingTop:"60px", gap:"60px" }}>
+    <div style={{ width:"100%", display:"flex", flexDirection:"column", justifyContent:"flex-start", height:"100%", paddingTop: mobile ? "0" : "60px", gap: mobile ? "32px" : "60px" }}>
 
       {/* Header */}
       <div>
@@ -211,7 +235,7 @@ function ClientsBelt({ accent, steel, text, bg, mode }) {
 
       {/* Modal */}
       {selected && (
-        <div onClick={closeModal} style={{
+        <div onClick={closeModal} {...stopTouch} style={{
           position:"fixed", inset:0, zIndex:200,
           background:"rgba(0,0,0,0.7)",
           display:"flex", alignItems:"center", justifyContent:"center",
@@ -219,7 +243,7 @@ function ClientsBelt({ accent, steel, text, bg, mode }) {
         }}>
           <div onClick={e => e.stopPropagation()} style={{
             background:modalBg, border:`1px solid ${selected.color}66`,
-            padding:"36px 40px", maxWidth:"420px", width:"90%",
+            padding: mobile ? "32px 22px 24px" : "36px 40px", maxWidth:"420px", width:"90%",
             position:"relative", cursor:"default",
           }}>
             {[[0,0],[1,0],[0,1],[1,1]].map(([r,b],i) => (
@@ -445,7 +469,7 @@ function workSurface(item) {
   return item.superficie || (item.m2 != null ? `${item.m2} m²` : "");
 }
 
-function WorksGrid({ floor, items, mode }) {
+function WorksGrid({ floor, items, mode, mobile }) {
   const { accent, steel, text } = floor;
   const modalBg = mode === "light" ? "#faf9f6" : "#0d0c14";
   const headingColor = mode === "light" ? "#1a1a1a" : "#f5f5f5";
@@ -457,7 +481,7 @@ function WorksGrid({ floor, items, mode }) {
   const [selected, setSelected] = useState(null);
 
   return (
-    <div style={{ width:"100%", maxWidth:"920px", display:"flex", flexDirection:"column", gap:"28px" }}>
+    <div style={{ width:"100%", maxWidth:"920px", display:"flex", flexDirection:"column", gap: mobile ? "20px" : "28px" }}>
 
       {/* Header */}
       <div>
@@ -466,16 +490,16 @@ function WorksGrid({ floor, items, mode }) {
           <span style={{ fontFamily:"'Courier New', monospace", fontSize:"11px", letterSpacing:"0.16em", color:accent, textTransform:"uppercase" }}>{floor.subtitle}</span>
         </div>
         <h1 style={{ fontSize:"clamp(38px, 5vw, 64px)", fontWeight:"normal", color:text, margin:0, lineHeight:0.95, letterSpacing:"-0.03em" }}>{floor.title}</h1>
-        <p style={{ fontSize:"15px", color:text, lineHeight:"1.8", margin:"1rem 0 0", opacity:0.65, maxWidth:"620px" }}>{floor.description}</p>
+        <p style={{ fontSize: mobile ? "14px" : "15px", color:text, lineHeight: mobile ? "1.6" : "1.8", margin:"1rem 0 0", opacity:0.65, maxWidth:"620px" }}>{floor.description}</p>
       </div>
 
       {/* Grid de fichas */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:"14px" }}>
+      <div style={{ display:"grid", gridTemplateColumns: mobile ? "repeat(auto-fill, minmax(150px, 1fr))" : "repeat(3, 1fr)", gap: mobile ? "10px" : "14px" }}>
         {items.map((it, i) => (
           <div key={i} onClick={() => setSelected(it)} style={{
-            position:"relative", cursor:"pointer", padding:"20px 16px",
+            position:"relative", cursor:"pointer", padding: mobile ? "14px 12px" : "20px 16px",
             border:`1px solid ${accent}33`, background:cardBg,
-            transition:"all 0.25s", minHeight:"150px",
+            transition:"all 0.25s", minHeight: mobile ? "120px" : "150px", gap:"8px",
             display:"flex", flexDirection:"column", justifyContent:"space-between",
           }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.background = cardBgHover; e.currentTarget.style.transform = "translateY(-3px)"; }}
@@ -500,9 +524,9 @@ function WorksGrid({ floor, items, mode }) {
               <div style={{ fontFamily:"Georgia, serif", fontSize:"18px", color:text, marginBottom:"4px", letterSpacing:"-0.01em" }}>{it.obra}</div>
               <div style={{ fontFamily:"'Courier New', monospace", fontSize:"10px", letterSpacing:"0.1em", color:steel, textTransform:"uppercase" }}>{it.cliente}</div>
             </div>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", fontFamily:"'Courier New', monospace", fontSize:"10px", color:accent, opacity:0.85, gap:"8px" }}>
+            <div style={{ display:"flex", flexDirection: mobile ? "column" : "row", justifyContent:"space-between", alignItems: mobile ? "flex-start" : "flex-end", fontFamily:"'Courier New', monospace", fontSize:"10px", color:accent, opacity:0.85, gap: mobile ? "2px" : "8px" }}>
               <span style={{ flexShrink:it.superficie ? 1 : 0 }}>{workSurface(it)}</span>
-              <span style={{ opacity:0.6, textAlign:"right" }}>{it.ubicacion}</span>
+              <span style={{ opacity:0.6, textAlign: mobile ? "left" : "right" }}>{it.ubicacion}</span>
             </div>
           </div>
         ))}
@@ -515,7 +539,7 @@ function WorksGrid({ floor, items, mode }) {
 
       {/* Modal: ficha técnica */}
       {selected && (
-        <div onClick={() => setSelected(null)} style={{
+        <div onClick={() => setSelected(null)} {...stopTouch} style={{
           position:"fixed", inset:0, zIndex:200,
           background:"rgba(0,0,0,0.7)",
           display:"flex", alignItems:"center", justifyContent:"center",
@@ -523,7 +547,9 @@ function WorksGrid({ floor, items, mode }) {
         }}>
           <div onClick={e => e.stopPropagation()} onWheel={e => e.stopPropagation()} style={{
             background:modalBg, border:`1px solid ${accent}66`,
-            padding:"40px 44px", maxWidth: selected.model ? "840px" : "460px", width:"90%",
+            padding: mobile ? "36px 18px 22px" : "40px 44px", maxWidth: selected.model ? "840px" : "460px",
+            width: mobile ? "calc(100% - 24px)" : "90%", maxHeight: mobile ? "calc(100dvh - 24px)" : "none",
+            overflowY: mobile ? "auto" : "visible", boxSizing:"border-box",
             position:"relative", cursor:"default",
           }}>
             {[[0,0],[1,0],[0,1],[1,1]].map(([r,b],i) => (
@@ -546,13 +572,13 @@ function WorksGrid({ floor, items, mode }) {
               lineHeight:1, cursor:"pointer",
             }}>×</button>
             <div style={{ fontFamily:"'Courier New', monospace", fontSize:"12px", letterSpacing:"0.2em", color:accent, marginBottom:"8px", textTransform:"uppercase" }}>Ficha técnica</div>
-            <h2 style={{ fontFamily:"Georgia, serif", fontSize:"32px", fontWeight:"normal", color:headingColor, margin:"0 0 22px", letterSpacing:"-0.02em" }}>{selected.obra}</h2>
+            <h2 style={{ fontFamily:"Georgia, serif", fontSize: mobile ? "24px" : "32px", fontWeight:"normal", color:headingColor, margin: mobile ? "0 0 16px" : "0 0 22px", letterSpacing:"-0.02em", paddingRight: mobile ? "30px" : 0 }}>{selected.obra}</h2>
             <div style={{ width:"36px", height:"1.5px", background:accent, marginBottom:"22px" }}/>
 
-            <div style={{ display:"flex", gap:"32px", flexDirection: selected.model ? "row" : "column", flexWrap:"wrap" }}>
+            <div style={{ display:"flex", gap: mobile ? "20px" : "32px", flexDirection: selected.model && !mobile ? "row" : "column", flexWrap:"wrap" }}>
               {selected.model && (
                 <div style={{
-                  flex:"1 1 380px", height:"360px",
+                  flex: mobile ? "0 0 auto" : "1 1 380px", height: mobile ? "280px" : "360px",
                   border:`1px solid ${accent}33`, background:"linear-gradient(180deg, #eef1f2 0%, #dde2e5 100%)",
                   position:"relative", overflow:"hidden",
                 }}>
@@ -561,11 +587,11 @@ function WorksGrid({ floor, items, mode }) {
                     position:"absolute", bottom:"8px", left:"10px", pointerEvents:"none",
                     fontFamily:"'Courier New', monospace", fontSize:"9px", letterSpacing:"0.1em",
                     color:"#3a444d", opacity:0.7, background:"rgba(255,255,255,0.6)", padding:"3px 8px",
-                  }}>🖱️ ARRASTRAR PARA ROTAR · RUEDA PARA ZOOM</div>
+                  }}>{mobile ? "ARRASTRAR PARA ROTAR" : "🖱️ ARRASTRAR PARA ROTAR · RUEDA PARA ZOOM"}</div>
                 </div>
               )}
 
-              <div style={{ flex:"1 1 220px", display:"flex", flexDirection:"column", gap:"18px" }}>
+              <div style={{ flex: mobile ? "0 0 auto" : "1 1 220px", display:"flex", flexDirection:"column", gap: mobile ? "12px" : "18px" }}>
                 {[
                   ["Cliente", selected.cliente],
                   ["Obra", selected.obra],
@@ -574,8 +600,8 @@ function WorksGrid({ floor, items, mode }) {
                   ["Ubicación", selected.ubicacion],
                 ].filter(([, value]) => value).map(([label, value]) => (
                   <div key={label} style={{ display:"flex", justifyContent:"space-between", gap:"20px", borderBottom:`1px solid ${accent}22`, paddingBottom:"12px" }}>
-                    <span style={{ fontFamily:"'Courier New', monospace", fontSize:"12px", letterSpacing:"0.14em", color:accent, opacity:0.9, textTransform:"uppercase", flexShrink:0 }}>{label}</span>
-                    <span style={{ fontFamily:"'Courier New', monospace", fontSize:"15px", color:bodyStrong, textAlign:"right" }}>{value}</span>
+                    <span style={{ fontFamily:"'Courier New', monospace", fontSize: mobile ? "10px" : "12px", letterSpacing:"0.14em", color:accent, opacity:0.9, textTransform:"uppercase", flexShrink:0 }}>{label}</span>
+                    <span style={{ fontFamily:"'Courier New', monospace", fontSize: mobile ? "13px" : "15px", color:bodyStrong, textAlign:"right" }}>{value}</span>
                   </div>
                 ))}
               </div>
@@ -955,9 +981,12 @@ export default function App() {
     try { return localStorage.getItem("ioca-theme") === "light" ? "light" : "dark"; }
     catch { return "dark"; }
   });
+  const [menuOpen,     setMenuOpen]     = useState(false);
+  const mobile     = useIsMobile();
   const lastScroll = useRef(0);
   const touchY     = useRef(null);
   const animating  = useRef(false);
+  const contentRef = useRef(null);
 
   useEffect(() => {
     try { localStorage.setItem("ioca-theme", mode); } catch { /* almacenamiento no disponible */ }
@@ -1016,8 +1045,16 @@ export default function App() {
       onTouchEnd={e => {
         if (touchY.current === null) return;
         const d = touchY.current - e.changedTouches[0].clientY;
-        if (Math.abs(d) > 40) go(current + (d > 0 ? 1 : -1));
         touchY.current = null;
+        if (menuOpen || Math.abs(d) <= 40) return;
+        // Si el contenido del piso tiene scroll, solo cambiar de piso al llegar al borde
+        const el = contentRef.current;
+        if (el && el.scrollHeight > el.clientHeight + 2) {
+          const atTop    = el.scrollTop <= 2;
+          const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 2;
+          if ((d > 0 && !atBottom) || (d < 0 && !atTop)) return;
+        }
+        go(current + (d > 0 ? 1 : -1));
       }}
       style={{
         minHeight: "100vh", overflow: "hidden", position: "relative",
@@ -1035,6 +1072,85 @@ export default function App() {
         transition: "background 0.9s ease",
       }} />
 
+      {mobile ? (
+        <>
+          {/* Barra superior (celular) */}
+          <div style={{
+            position: "fixed", left: 0, right: 0, top: 0, height: "60px", zIndex: 40,
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "0 14px", boxSizing: "border-box",
+            borderBottom: `1px solid ${sidebarCS}22`,
+            background: `${floor.bg}e6`, backdropFilter: "blur(6px)",
+            transition: "background 0.9s ease",
+          }}>
+            <img src={mode === "light" ? "/logo-blanco.png" : "/logo-final.png"} alt="IOCA" style={{ height: "34px", objectFit: "contain", opacity: 0.9 }} />
+            <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+              <div style={{ fontFamily: "'Courier New', monospace", textAlign: "right" }}>
+                <div style={{ color: floor.accent, fontSize: "18px", fontWeight: "bold", lineHeight: 1 }}>
+                  {String(floor.number).padStart(2, "0")}
+                </div>
+                <div style={{ color: floor.steel, fontSize: "8px", letterSpacing: "0.2em", marginTop: "2px" }}>{floor.label}</div>
+              </div>
+              <button onClick={() => setMenuOpen(o => !o)} aria-label="Menú" style={{
+                width: "40px", height: "40px", display: "flex", flexDirection: "column",
+                alignItems: "center", justifyContent: "center", gap: "5px",
+                background: "transparent", border: `1px solid ${floor.accent}66`, cursor: "pointer", padding: 0,
+              }}>
+                {[0, 1, 2].map(i => (
+                  <span key={i} style={{
+                    width: "18px", height: "1.5px", background: floor.accent, transition: "all 0.25s",
+                    transform: menuOpen ? (i === 0 ? "translateY(6.5px) rotate(45deg)" : i === 2 ? "translateY(-6.5px) rotate(-45deg)" : "none") : "none",
+                    opacity: menuOpen && i === 1 ? 0 : 1,
+                  }} />
+                ))}
+              </button>
+            </div>
+          </div>
+
+          {/* Menú de pisos (celular) */}
+          {menuOpen && (
+            <div onClick={() => setMenuOpen(false)} {...stopTouch} style={{
+              position: "fixed", left: 0, right: 0, top: "60px", bottom: 0, zIndex: 39,
+              background: `${floor.bg}f2`, backdropFilter: "blur(6px)",
+              display: "flex", flexDirection: "column", alignItems: "center",
+              padding: "12px 16px 20px", boxSizing: "border-box",
+            }}>
+              <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: "340px", flex: 1, minHeight: 0 }}>
+                <ElevatorShaft current={current} introCurrent={introCurrent} doorsVisible={doorsVisible} arrived={arrived}
+                  go={i => { setMenuOpen(false); go(i); }} accent={floor.accent} mode={mode} />
+              </div>
+              <div onClick={e => e.stopPropagation()} style={{ marginTop: "12px", width: "180px", display: "flex", gap: "6px" }}>
+                {[["dark", "OSCURO"], ["light", "CLARO"]].map(([val, label]) => (
+                  <button key={val} onClick={() => setMode(val)} style={{
+                    flex: 1, textAlign: "center",
+                    background: mode === val ? `${floor.accent}22` : "transparent",
+                    border: `1px solid ${mode === val ? floor.accent : sidebarCS + "44"}`,
+                    color: mode === val ? floor.accent : (mode === "light" ? "#1a1a1a" : "#e5e5e5"),
+                    padding: "8px 6px",
+                    fontFamily: "'Courier New', monospace", fontSize: "10px", letterSpacing: "0.04em",
+                    cursor: "pointer",
+                  }}>{label}</button>
+                ))}
+              </div>
+              <div style={{ display: "flex", gap: "22px", marginTop: "12px" }}>
+                <a href="https://instagram.com" target="_blank" rel="noreferrer" style={{ opacity: 0.7 }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="2" width="20" height="20" rx="5.5" stroke={sidebarCS} strokeWidth="1.8"/>
+                    <circle cx="12" cy="12" r="4.5" stroke={sidebarCS} strokeWidth="1.8"/>
+                    <circle cx="17.5" cy="6.5" r="1" fill={sidebarCS}/>
+                  </svg>
+                </a>
+                <a href="https://wa.me/" target="_blank" rel="noreferrer" style={{ opacity: 0.7 }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.978-1.41A9.96 9.96 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2z" stroke={sidebarCS} strokeWidth="1.8" strokeLinejoin="round"/>
+                    <path d="M8.5 9.5c.5 1 1.5 3 3.5 4s3-1 3-1-.5-1.5-1-1.5c-.4 0-.8.3-1 .5-.8-.3-2-1.5-2.3-2.3.2-.2.5-.6.5-1 0-.5-1.5-1-1.5-1S8 8.5 8.5 9.5z" fill={sidebarCS}/>
+                  </svg>
+                </a>
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
       <div style={{
         position: "fixed", left: 0, top: 0, bottom: 0,
         width: "310px", zIndex: 35,
@@ -1086,10 +1202,11 @@ export default function App() {
           ))}
         </div>
       </div>
+      )}
 
       {doorsVisible && (
-        <svg style={{ position:"fixed", left:"310px", right:0, top:0, bottom:0,
-          width:"calc(100% - 310px)", height:"100%", zIndex:45,
+        <svg style={{ position:"fixed", left: mobile ? 0 : "310px", right:0, top:0, bottom:0,
+          width: mobile ? "100%" : "calc(100% - 310px)", height:"100%", zIndex:45,
           pointerEvents: doorsOpen ? "none" : "all" }}
           viewBox="0 0 1000 700" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -1159,7 +1276,12 @@ export default function App() {
         </svg>
       )}
 
-      <div style={{
+      <div ref={contentRef} style={mobile ? {
+        position: "fixed", left: 0, right: 0, top: "60px", bottom: 0, zIndex: 30,
+        display: "flex", alignItems: "flex-start", justifyContent: "center",
+        padding: "24px 18px 84px", boxSizing: "border-box",
+        overflowY: "auto", overflowX: "hidden", WebkitOverflowScrolling: "touch",
+      } : {
         position: "fixed", left: "310px", right: 0, top: 0, bottom: 0, zIndex: 30,
         display: "flex", alignItems: "center", justifyContent: "center",
         padding: WIDE_FLOORS.has(display) ? "40px 40px 40px 40px" : "80px 80px 80px 30px",
@@ -1168,21 +1290,22 @@ export default function App() {
           key={display}
           style={{
             maxWidth: WIDE_FLOORS.has(display) ? "920px" : "480px", width: "100%",
+            margin: mobile ? "auto 0" : 0,
             animation: transitioning
               ? `${direction === "down" ? "exitUp" : "exitDown"} 0.28s ease forwards`
               : `${direction === "down" ? "enterUp" : "enterDown"} 0.6s cubic-bezier(0.16,1,0.3,1) forwards`,
           }}
         >
           {display === 1 ? (
-            <WorksGrid floor={floor} items={VIVIENDAS_DATA} mode={mode} />
+            <WorksGrid floor={floor} items={VIVIENDAS_DATA} mode={mode} mobile={mobile} />
           ) : display === 2 ? (
-            <WorksGrid floor={floor} items={EDIFICIOS_DATA} mode={mode} />
+            <WorksGrid floor={floor} items={EDIFICIOS_DATA} mode={mode} mobile={mobile} />
           ) : display === 3 ? (
-            <WorksGrid floor={floor} items={NAVES_DATA} mode={mode} />
+            <WorksGrid floor={floor} items={NAVES_DATA} mode={mode} mobile={mobile} />
           ) : display === 4 ? (
-            <WorksGrid floor={floor} items={PATOLOGIAS_DATA} mode={mode} />
+            <WorksGrid floor={floor} items={PATOLOGIAS_DATA} mode={mode} mobile={mobile} />
           ) : display === 6 ? (
-            <ClientsBelt accent={floor.accent} steel={floor.steel} text={floor.text} bg={floor.bg} mode={mode} />
+            <ClientsBelt accent={floor.accent} steel={floor.steel} text={floor.text} bg={floor.bg} mode={mode} mobile={mobile} />
           ) : (
             <>
               <div style={{
@@ -1195,7 +1318,8 @@ export default function App() {
               </div>
 
               <h1 style={{
-                fontSize: "clamp(44px, 5.5vw, 72px)", fontWeight: "normal",
+                fontSize: mobile ? "clamp(32px, 10vw, 48px)" : "clamp(44px, 5.5vw, 72px)", fontWeight: "normal",
+                overflowWrap: "break-word",
                 color: floor.text, margin: "0 0 1rem",
                 lineHeight: 0.95, letterSpacing: "-0.03em",
               }}>{floor.title}</h1>
@@ -1209,7 +1333,7 @@ export default function App() {
               </div>
 
               <p style={{
-                fontSize:"16px", color:floor.text, lineHeight:"1.85",
+                fontSize: mobile ? "15px" : "16px", color:floor.text, lineHeight: mobile ? "1.7" : "1.85",
                 margin:"0 0 2.5rem", opacity:0.72, maxWidth:"380px",
               }}>{floor.description}</p>
 
@@ -1227,7 +1351,7 @@ export default function App() {
         </div>
       </div>
 
-      <div style={{
+      {!mobile && <div style={{
         position:"fixed", top:"60px", right:"60px", zIndex:35,
         fontFamily:"'Courier New', monospace", textAlign:"right",
       }}>
@@ -1237,9 +1361,13 @@ export default function App() {
         <div style={{ color:floor.steel, fontSize:"9px", letterSpacing:"0.2em", marginTop:"3px" }}>
           {floor.label}
         </div>
-      </div>
+      </div>}
 
-      <div style={{
+      <div style={mobile ? {
+        position:"fixed", right:"16px", bottom:"16px",
+        display:"flex", flexDirection:"row", gap:"0.6rem", zIndex:35, alignItems:"center",
+        padding:"6px", background:`${floor.bg}cc`, backdropFilter:"blur(4px)",
+      } : {
         position:"fixed", right:"20px", top:"50%", transform:"translateY(-50%)",
         display:"flex", flexDirection:"column", gap:"0.6rem", zIndex:35, alignItems:"center",
       }}>
@@ -1248,12 +1376,12 @@ export default function App() {
             background:"transparent",
             border:`1px solid ${dis ? floor.steel : floor.accent}`,
             color: dis ? floor.steel : floor.accent,
-            padding:"8px 12px", cursor: dis?"default":"pointer",
+            padding: mobile ? "10px 14px" : "8px 12px", cursor: dis?"default":"pointer",
             fontFamily:"'Courier New', monospace", fontSize:"11px",
             opacity: dis?0.3:1, transition:"all 0.3s",
           }}>{lbl}</button>
         ))}
-        <span style={{ color:floor.steel, fontFamily:"'Courier New', monospace", fontSize:"10px", letterSpacing:"0.2em", writingMode:"vertical-rl" }}>
+        <span style={{ color:floor.steel, fontFamily:"'Courier New', monospace", fontSize:"10px", letterSpacing:"0.2em", writingMode: mobile ? "horizontal-tb" : "vertical-rl" }}>
           {current+1} / {TOTAL}
         </span>
       </div>
