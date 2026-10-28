@@ -822,19 +822,19 @@ function ElevatorShaft({ current, introCurrent, doorsVisible, arrived, go, accen
               fill={CS} fillOpacity="0.18" />
             <circle cx={CAB_X - 16} cy={y} r="2.5" fill={CR} fillOpacity={i === arrived ? 0.85 : 0.3} />
             <circle cx={CAB_X + CAB_W + 16} cy={y} r="2.5" fill={CR} fillOpacity={i === arrived ? 0.85 : 0.3} />
-            <text x="13" y={y + 4} fontFamily="'Courier New', monospace" fontSize="8"
+            <text x="13" y={y + 4} fontFamily="'Courier New', monospace" fontSize="10"
               fill={i === arrived ? CA : CS} fillOpacity={i === arrived ? 1 : inactiveNumberOpacity}
               letterSpacing="0.5" textAnchor="middle">
               {String(f.number).padStart(2, "0")}
             </text>
             {i === arrived && <line x1="185" y1={y} x2="198" y2={y} stroke={accent} strokeWidth="1.5" strokeOpacity="0.9" />}
-            <text x="202" y={f.lines ? y - 3 : y + 5} fontFamily="'Courier New', monospace" fontSize="14"
+            <text x="202" y={f.lines ? y - 4 : y + 6} fontFamily="'Courier New', monospace" fontSize="16"
               fill={i === arrived ? accent : inactiveLabel}
               fillOpacity={i === arrived ? 1 : inactiveLabelOpacity}
               filter={i === arrived ? "url(#neon)" : undefined}
               letterSpacing="0.8" textAnchor="start">
               {f.lines
-                ? f.lines.map((line, li) => <tspan key={li} x="202" dy={li === 0 ? 0 : 15}>{line}</tspan>)
+                ? f.lines.map((line, li) => <tspan key={li} x="202" dy={li === 0 ? 0 : 17}>{line}</tspan>)
                 : f.title.toUpperCase()}
             </text>
           </g>
@@ -1159,7 +1159,7 @@ export default function App() {
             background: `${floor.bg}e6`, backdropFilter: "blur(6px)",
             transition: "background 0.9s ease",
           }}>
-            <img src={mode === "light" ? "/logo-blanco.png" : "/logo-final.png"} alt="IOCA" style={{ height: "34px", objectFit: "contain", opacity: 0.9 }} />
+            <img src={mode === "light" ? "/logo-blanco.png" : "/logo-final.png"} alt="IOCA" style={{ height: "42px", objectFit: "contain", opacity: 0.9 }} />
             <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
               <div style={{ fontFamily: "'Courier New', monospace", textAlign: "right" }}>
                 <div style={{ color: floor.accent, fontSize: "18px", fontWeight: "bold", lineHeight: 1 }}>
@@ -1167,7 +1167,6 @@ export default function App() {
                 </div>
                 <div style={{ color: floor.steel, fontSize: "8px", letterSpacing: "0.2em", marginTop: "2px" }}>{floor.label}</div>
               </div>
-              <ThemeToggle mode={mode} setMode={setMode} accent={floor.accent} size={40} />
               <button onClick={() => setMenuOpen(o => !o)} aria-label="Menú" style={{
                 width: "40px", height: "40px", display: "flex", flexDirection: "column",
                 alignItems: "center", justifyContent: "center", gap: "5px",
