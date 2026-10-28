@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import ProjectModelViewer from "./ProjectModelViewer";
+import ContactForm from "./ContactForm";
 
 
 // ─── CLIENTES: cinta transportadora industrial ───────────────────────────────
@@ -1070,6 +1071,7 @@ export default function App() {
       go(current + (e.deltaY > 0 ? 1 : -1));
     };
     const onKey = e => {
+      if (e.target.closest && e.target.closest("input, textarea")) return; // no cambiar de piso mientras se escribe
       if (e.key === "ArrowDown" || e.key === "PageDown") go(current + 1);
       if (e.key === "ArrowUp"   || e.key === "PageUp")   go(current - 1);
     };
@@ -1361,8 +1363,12 @@ export default function App() {
 
               <p style={{
                 fontSize: mobile ? "15px" : "16px", color:floor.text, lineHeight: mobile ? "1.7" : "1.85",
-                margin:"0 0 2.5rem", opacity:0.72, maxWidth:"380px",
+                margin: floor.title === "Contacto" ? "0 0 1.5rem" : "0 0 2.5rem", opacity:0.72, maxWidth:"380px",
               }}>{floor.description}</p>
+
+              {floor.title === "Contacto" && (
+                <ContactForm floor={floor} mode={mode} mobile={mobile} whatsappUrl={WHATSAPP_URL} />
+              )}
 
               <div style={{
                 fontFamily:"'Courier New', monospace", fontSize:"10px",
