@@ -93,6 +93,36 @@ function useEscape(active, onClose) {
   }, [active, onClose]);
 }
 
+// Botón redondo sol/luna para alternar entre modo claro y oscuro
+function ThemeToggle({ mode, setMode, accent, size = 36 }) {
+  const dark = mode !== "light";
+  const label = dark ? "Cambiar a modo claro" : "Cambiar a modo oscuro";
+  return (
+    <button type="button" onClick={() => setMode(dark ? "light" : "dark")} aria-label={label} title={label} style={{
+      width:`${size}px`, height:`${size}px`, borderRadius:"50%", padding:0, flexShrink:0,
+      display:"flex", alignItems:"center", justifyContent:"center",
+      background:"transparent", border:`1px solid ${accent}66`, color:accent,
+      cursor:"pointer", transition:"all 0.3s",
+    }}
+      onMouseEnter={e => { e.currentTarget.style.background = `${accent}22`; }}
+      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+    >
+      {dark ? (
+        // Sol: pasar a modo claro
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+          <circle cx="12" cy="12" r="4.2" />
+          <path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6" />
+        </svg>
+      ) : (
+        // Luna: pasar a modo oscuro
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
+          <path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
 // Evita que los toques dentro de un modal cambien de piso
 const stopTouch = { onTouchStart: e => e.stopPropagation(), onTouchEnd: e => e.stopPropagation() };
 
@@ -1137,6 +1167,7 @@ export default function App() {
                 </div>
                 <div style={{ color: floor.steel, fontSize: "8px", letterSpacing: "0.2em", marginTop: "2px" }}>{floor.label}</div>
               </div>
+              <ThemeToggle mode={mode} setMode={setMode} accent={floor.accent} size={40} />
               <button onClick={() => setMenuOpen(o => !o)} aria-label="Menú" style={{
                 width: "40px", height: "40px", display: "flex", flexDirection: "column",
                 alignItems: "center", justifyContent: "center", gap: "5px",
@@ -1165,19 +1196,6 @@ export default function App() {
                 <ElevatorShaft current={current} introCurrent={introCurrent} doorsVisible={doorsVisible} arrived={arrived}
                   go={i => { setMenuOpen(false); go(i); }} accent={floor.accent} mode={mode} />
               </div>
-              <div onClick={e => e.stopPropagation()} style={{ marginTop: "12px", width: "180px", display: "flex", gap: "6px" }}>
-                {[["dark", "OSCURO"], ["light", "CLARO"]].map(([val, label]) => (
-                  <button key={val} onClick={() => setMode(val)} style={{
-                    flex: 1, textAlign: "center",
-                    background: mode === val ? `${floor.accent}22` : "transparent",
-                    border: `1px solid ${mode === val ? floor.accent : sidebarCS + "44"}`,
-                    color: mode === val ? floor.accent : (mode === "light" ? "#1a1a1a" : "#e5e5e5"),
-                    padding: "8px 6px",
-                    fontFamily: "'Courier New', monospace", fontSize: "10px", letterSpacing: "0.04em",
-                    cursor: "pointer",
-                  }}>{label}</button>
-                ))}
-              </div>
               <div style={{ display: "flex", gap: "22px", marginTop: "12px" }}>
                 <a href={WHATSAPP_URL} target="_blank" rel="noreferrer" style={{ opacity: 0.7 }}>
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1201,34 +1219,10 @@ export default function App() {
       }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "12px" }}>
           <img src={mode === "light" ? "/logo-blanco.png" : "/logo-final.png"} alt="IOCA"
-            style={{ width: "200px", objectFit: "contain", marginTop: "12px", marginBottom: "8px", opacity: 0.9 }} />
-          <div style={{ display: "flex", gap: "18px", alignItems: "center" }}>
-            <a href={WHATSAPP_URL} target="_blank" rel="noreferrer"
-              style={{ opacity: 0.5, transition: "opacity 0.3s" }}
-              onMouseEnter={e => e.currentTarget.style.opacity = 1}
-              onMouseLeave={e => e.currentTarget.style.opacity = 0.5}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.978-1.41A9.96 9.96 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2z" stroke={CS} strokeWidth="1.8" strokeLinejoin="round"/>
-                <path d="M8.5 9.5c.5 1 1.5 3 3.5 4s3-1 3-1-.5-1.5-1-1.5c-.4 0-.8.3-1 .5-.8-.3-2-1.5-2.3-2.3.2-.2.5-.6.5-1 0-.5-1.5-1-1.5-1S8 8.5 8.5 9.5z" fill={CS}/>
-              </svg>
-            </a>
-          </div>
+            style={{ width: "240px", objectFit: "contain", marginTop: "12px", marginBottom: "4px", opacity: 0.9 }} />
         </div>
         <div style={{ width: "290px", flex: 1, minHeight: 0 }}>
           <ElevatorShaft current={current} introCurrent={introCurrent} doorsVisible={doorsVisible} arrived={arrived} go={go} accent={floor.accent} mode={mode} />
-        </div>
-        <div style={{ marginTop: "12px", width: "150px", display: "flex", gap: "6px" }}>
-          {[["dark", "OSCURO"], ["light", "CLARO"]].map(([val, label]) => (
-            <button key={val} onClick={() => setMode(val)} style={{
-              flex: 1, textAlign: "center",
-              background: mode === val ? `${floor.accent}22` : "transparent",
-              border: `1px solid ${mode === val ? floor.accent : sidebarCS + "44"}`,
-              color: mode === val ? floor.accent : (mode === "light" ? "#1a1a1a" : "#e5e5e5"),
-              padding: "4px 6px",
-              fontFamily: "'Courier New', monospace", fontSize: "9px", letterSpacing: "0.04em",
-              cursor: "pointer", transition: "all 0.2s",
-            }}>{label}</button>
-          ))}
         </div>
       </div>
       )}
@@ -1386,13 +1380,16 @@ export default function App() {
 
       {!mobile && <div style={{
         position:"fixed", top:"60px", right:"60px", zIndex:35,
-        fontFamily:"'Courier New', monospace", textAlign:"right",
+        display:"flex", alignItems:"center", gap:"18px",
       }}>
-        <div style={{ color:floor.accent, fontSize:"28px", fontWeight:"bold", lineHeight:1 }}>
-          {String(floor.number).padStart(2,"0")}
-        </div>
-        <div style={{ color:floor.steel, fontSize:"9px", letterSpacing:"0.2em", marginTop:"3px" }}>
-          {floor.label}
+        <ThemeToggle mode={mode} setMode={setMode} accent={floor.accent} />
+        <div style={{ fontFamily:"'Courier New', monospace", textAlign:"right" }}>
+          <div style={{ color:floor.accent, fontSize:"28px", fontWeight:"bold", lineHeight:1 }}>
+            {String(floor.number).padStart(2,"0")}
+          </div>
+          <div style={{ color:floor.steel, fontSize:"9px", letterSpacing:"0.2em", marginTop:"3px" }}>
+            {floor.label}
+          </div>
         </div>
       </div>}
 
